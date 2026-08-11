@@ -5,6 +5,9 @@
 const { colors } = require("./theme/colors");
 
 module.exports = {
+  // NativeWind manages the color scheme itself, so dark mode must be
+  // class-based ('media' makes web throw "Cannot manually set color scheme").
+  darkMode: "class",
   content: [
     "./App.tsx",
     "./app/**/*.{js,jsx,ts,tsx}",
