@@ -20,6 +20,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "scheme": "braintrain",
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
