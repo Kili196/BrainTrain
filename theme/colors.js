@@ -15,7 +15,10 @@ const colors = {
   bg: "#0b0b0b",
   surface: "#141414",
   card: "rgba(255,255,255,0.045)",
+  "card-alt": "rgba(255,255,255,0.05)",
   chip: "rgba(255,255,255,0.08)",
+  // unfilled progress track / switch off-state (design §1 "track")
+  track: "rgba(255,255,255,0.10)",
 
   // accent — the one hue; actions & active states only. Base = accent.DEFAULT.
   accent: {
@@ -31,6 +34,7 @@ const colors = {
     secondary: "#8a8a8a",
     muted: "#6a6a6a",
     faint: "#5f5f5f",
+    disabled: "#4f4f4f", // placeholder text, empty-state numbers
   },
 
   // status

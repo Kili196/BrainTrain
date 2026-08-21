@@ -23,7 +23,8 @@
     },
     "scheme": "braintrain",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ]
   }
 }

@@ -30,8 +30,16 @@ module.exports = {
         "2xl": "22px",
       },
       fontFamily: {
-        // applied once the Archivo font is loaded via expo-font; falls back to system until then
-        sans: ["Archivo", "system-ui", "sans-serif"],
+        // Archivo is loaded per-weight in app/_layout.tsx. React Native does NOT
+        // synthesize weight from a single-weight file, so each weight is its own
+        // family and gets its own class. Names are prefixed `sans-` to avoid
+        // colliding with Tailwind's font-weight utilities (font-bold, font-medium…).
+        // Use these instead of font-weight classes for text that must be Archivo.
+        sans: ["Archivo_400Regular", "system-ui", "sans-serif"],
+        "sans-medium": ["Archivo_500Medium", "system-ui", "sans-serif"],
+        "sans-semibold": ["Archivo_600SemiBold", "system-ui", "sans-serif"],
+        "sans-bold": ["Archivo_700Bold", "system-ui", "sans-serif"],
+        "sans-extrabold": ["Archivo_800ExtraBold", "system-ui", "sans-serif"],
       },
       // type scale — [size, { lineHeight, letterSpacing }]. Pair with a weight
       // class (headings use font-extrabold) since RN keeps weight separate from size.
