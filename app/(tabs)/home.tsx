@@ -1,8 +1,8 @@
 import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { clearOnboarding } from "../lib/onboarding-storage";
-import { Button } from "../components/ui/Button";
+import { clearOnboarding } from "../../lib/onboarding-storage";
+import { Button } from "../../components/ui/Button";
 import { useRouter } from "expo-router";
 
 // Placeholder home — where onboarding lands. Replaced once the real app exists.
@@ -24,7 +24,9 @@ export default function Home() {
       <Text className="text-eyebrow font-sans-extrabold uppercase text-text-faint">
         Home
       </Text>
-      <Text className="text-h1 font-sans-extrabold text-text">You&apos;re in.</Text>
+      <Text className="text-h1 font-sans-extrabold text-text">
+        You&apos;re in.
+      </Text>
       <Text className="mb-6 text-center text-body font-sans text-text-secondary">
         This is a placeholder for the main app. Onboarding is done and your
         profile is saved on this device.
