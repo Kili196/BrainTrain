@@ -21,6 +21,8 @@ module.exports = {
       borderColor: {
         DEFAULT: "rgba(255,255,255,0.09)",
         divider: "rgba(255,255,255,0.08)",
+        // sheets and dialogs sit above the page and carry a brighter hairline
+        modal: "rgba(255,255,255,0.12)",
       },
       borderRadius: {
         sm: "12px",
@@ -48,6 +50,8 @@ module.exports = {
         h1: ["25px", { lineHeight: "28px", letterSpacing: "-0.4px" }],
         h2: ["20px", { lineHeight: "23px", letterSpacing: "-0.2px" }],
         h3: ["16px", { lineHeight: "21px" }],
+        // list items and sheet rows — design §2 "H4 / list item"
+        h4: ["14.5px", { lineHeight: "20px", letterSpacing: "-0.15px" }],
         body: ["13px", { lineHeight: "21px" }],
         eyebrow: ["10px", { lineHeight: "12px", letterSpacing: "2px" }],
         button: ["14px", { lineHeight: "17px", letterSpacing: "1.7px" }],

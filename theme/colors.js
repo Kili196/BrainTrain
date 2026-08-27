@@ -37,6 +37,14 @@ const colors = {
     disabled: "#4f4f4f", // placeholder text, empty-state numbers
   },
 
+  // the shimmer band sweeping across the hero button (design §4)
+  shimmer: "rgba(255,255,255,0.55)",
+
+  // stepper and icon-button fills (design §1 "inactive-fill")
+  "inactive-fill": "rgba(255,255,255,0.06)",
+  // dims the screen behind a sheet or dialog (design §12)
+  scrim: "rgba(0,0,0,0.6)",
+
   // status
   error: "#c46a6a",
   danger: "#ff3b30",
