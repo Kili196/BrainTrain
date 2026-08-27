@@ -1,3 +1,4 @@
+import type { CategoryKey } from "../constants/categories";
 import type { Database } from "./database.types";
 import { supabase } from "./supabase";
 
@@ -52,17 +53,30 @@ export async function fetchTopics(): Promise<Topic[]> {
 }
 
 // Draws one random published topic, rolled in Postgres by the `random_topic()`
-// function (migration 20260827163100). Doing it server-side keeps the payload at
-// one row instead of the whole pool, and the function runs `security invoker`,
-// so the RLS policy still hides unpublished rows.
+// function. Doing it server-side keeps the payload at one row instead of the
+// whole pool, and the function runs `security invoker`, so the RLS policy still
+// hides unpublished rows.
 //
-// Returns null when the pool is empty — a fresh database, or every topic still
-// in draft. That is a state the UI has to handle, not an error.
+// Pass a category to draw from it alone; omit it to draw from everything. The
+// filter is applied inside the function, so a category with no published topics
+// comes back as null rather than as a topic from somewhere else.
+//
+// Returns null when there is nothing to draw — an empty pool, or an empty
+// category. That is a state the UI has to handle, not an error.
 //
 // Note this is NOT the daily topic: this draw is independent per call and may
 // repeat. The daily topic is global and recorded, and gets its own function.
-export async function fetchRandomTopic(): Promise<Topic | null> {
-  const { data, error } = await supabase.rpc("random_topic").maybeSingle();
+export async function fetchRandomTopic(
+  // Named categoryKey, not category: the row's own `category` column is
+  // destructured further down and the two would shadow each other.
+  categoryKey?: CategoryKey | null
+): Promise<Topic | null> {
+  const { data, error } = await supabase
+    // Undefined leaves the argument out entirely, so Postgres applies its own
+    // default of null. Sending null explicitly would work too, but this keeps
+    // the two definitions of "no filter" in one place — the function's.
+    .rpc("random_topic", categoryKey ? { p_category: categoryKey } : {})
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to draw a random topic: ${error.message}`);

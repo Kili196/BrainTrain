@@ -185,7 +185,7 @@ export type Database = {
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
       random_topic: {
-        Args: never
+        Args: { p_category?: string }
         Returns: {
           category: string
           created_at: string
