@@ -51,6 +51,8 @@ module.exports = {
         body: ["13px", { lineHeight: "21px" }],
         eyebrow: ["10px", { lineHeight: "12px", letterSpacing: "2px" }],
         button: ["14px", { lineHeight: "17px", letterSpacing: "1.7px" }],
+        // the PLAY / START buttons only — design §4 "big button"
+        "button-lg": ["20px", { lineHeight: "24px", letterSpacing: "2.8px" }],
       },
       letterSpacing: {
         eyebrow: "2px", // ~0.2em — uppercase section labels
