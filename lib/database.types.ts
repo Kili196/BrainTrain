@@ -106,7 +106,7 @@ export type Database = {
       }
       speech_sessions: {
         Row: {
-          client_id: string
+          client_session_id: string
           duration_ms: number
           id: string
           quiz_score: number | null
@@ -116,7 +116,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          client_id: string
+          client_session_id: string
           duration_ms: number
           id?: string
           quiz_score?: number | null
@@ -126,7 +126,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          client_id?: string
+          client_session_id?: string
           duration_ms?: number
           id?: string
           quiz_score?: number | null
