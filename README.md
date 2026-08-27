@@ -34,12 +34,8 @@ Row Level Security in the database, not from hiding the key.
 ```bash
 git clone https://github.com/Kili196/BrainTrain.git
 cd BrainTrain
-git checkout feat/supabase-backend
 npm install
 ```
-
-Note the branch: **`feat/supabase-backend`**, not `main`. The entire Supabase setup
-(`lib/supabase.ts`, `supabase/`) lives only on that branch.
 
 ## 4. Create your `.env`
 
@@ -133,4 +129,3 @@ markdown and regenerate.
 | `Missing EXPO_PUBLIC_SUPABASE_URL…` at startup | `.env` missing, misnamed, or Metro was already running → `npx expo start -c` |
 | Your key is a long JWT | wrong dashboard tab, that's the legacy key |
 | `db:push` says "not linked" | step 6 is missing |
-| `lib/supabase.ts` and `supabase/` don't exist | you're on `main` instead of `feat/supabase-backend` |
