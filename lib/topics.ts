@@ -51,6 +51,36 @@ export async function fetchTopics(): Promise<Topic[]> {
   return data ?? [];
 }
 
+// Draws one random published topic, rolled in Postgres by the `random_topic()`
+// function (migration 20260827163100). Doing it server-side keeps the payload at
+// one row instead of the whole pool, and the function runs `security invoker`,
+// so the RLS policy still hides unpublished rows.
+//
+// Returns null when the pool is empty — a fresh database, or every topic still
+// in draft. That is a state the UI has to handle, not an error.
+//
+// Note this is NOT the daily topic: this draw is independent per call and may
+// repeat. The daily topic is global and recorded, and gets its own function.
+export async function fetchRandomTopic(): Promise<Topic | null> {
+  const { data, error } = await supabase.rpc("random_topic").maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to draw a random topic: ${error.message}`);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  // The function returns the full row including `status`; the rest of the app
+  // works with the narrower `Topic`, so drop it here rather than widening the
+  // type for one caller.
+  const { id, slug, category, title, description, created_at, updated_at } =
+    data;
+
+  return { id, slug, category, title, description, created_at, updated_at };
+}
+
 export async function fetchTopicBySlug(slug: string): Promise<Topic | null> {
   // `maybeSingle` returns null instead of erroring when nothing matches — an
   // unknown or unpublished slug is a normal outcome, not a failure.

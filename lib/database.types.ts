@@ -184,6 +184,25 @@ export type Database = {
     }
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
+      random_topic: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "topics"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
