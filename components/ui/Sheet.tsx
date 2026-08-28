@@ -17,6 +17,40 @@ export type SheetProps = {
 };
 
 export function Sheet({ visible, title, onClose, children }: SheetProps) {
+  return (
+    <SheetSurface visible={visible} onClose={onClose} closeLabel={`Close ${title}`}>
+      <View className="flex-row items-center justify-between px-5 py-4">
+        <Text className="text-h3 font-sans-extrabold text-text">{title}</Text>
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Done"
+          hitSlop={8}
+          className="h-9 w-9 items-center justify-center rounded-full border border-modal"
+        >
+          <CheckIcon size={16} color={colors.text.DEFAULT} />
+        </Pressable>
+      </View>
+
+      {children}
+    </SheetSurface>
+  );
+}
+
+// Modal, scrim and the floating card — everything a sheet has before it has any
+// content. Split out because not every popover wants the title-and-check header
+// above: the play menu is the same surface with entirely different insides.
+export function SheetSurface({
+  visible,
+  onClose,
+  closeLabel,
+  children,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  closeLabel: string;
+  children: ReactNode;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -36,7 +70,7 @@ export function Sheet({ visible, title, onClose, children }: SheetProps) {
           className="absolute inset-0 bg-scrim"
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel={`Close ${title}`}
+          accessibilityLabel={closeLabel}
         />
 
         <View
@@ -47,21 +81,6 @@ export function Sheet({ visible, title, onClose, children }: SheetProps) {
             boxShadow: "0 24px 60px -20px rgba(0,0,0,0.9)",
           }}
         >
-          <View className="flex-row items-center justify-between px-5 py-4">
-            <Text className="text-h3 font-sans-extrabold text-text">
-              {title}
-            </Text>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Done"
-              hitSlop={8}
-              className="h-9 w-9 items-center justify-center rounded-full border border-modal"
-            >
-              <CheckIcon size={16} color={colors.text.DEFAULT} />
-            </Pressable>
-          </View>
-
           {children}
         </View>
       </View>

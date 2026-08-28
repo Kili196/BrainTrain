@@ -4,7 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import { CategorySheet } from "../../components/game/CategorySheet";
+import { PlayModeSheet } from "../../components/game/PlayModeSheet";
 import { SettingsSheet } from "../../components/game/SettingsSheet";
+import { ConstellationBackdrop } from "../../components/game/ConstellationBackdrop";
+import { ORBIT_POOL_SIZE, TopicOrbit } from "../../components/game/TopicOrbit";
 import { GearIcon } from "../../components/icons/GearIcon";
 import { Button } from "../../components/ui/Button";
 import {
@@ -14,13 +17,22 @@ import {
   type GameSettings,
 } from "../../lib/game-settings";
 import type { CategoryKey } from "../../constants/categories";
+import {
+  hasSeenDailyTopic,
+  markDailyTopicSeen,
+} from "../../lib/daily-topic-seen";
 import { clearOnboarding } from "../../lib/onboarding-storage";
-import { fetchRandomTopic, type Topic } from "../../lib/topics";
+import {
+  fetchDailyTopic,
+  fetchRandomTopic,
+  fetchRandomTopics,
+  type Topic,
+} from "../../lib/topics";
 import { colors } from "../../theme/colors";
 
-// Home, first slice: PLAY draws a random topic from the backend and puts it on
-// the stage. Everything else from the design (wordmark, achievements/challenges
-// row, mode pills, constellation backdrop) is deliberately not here yet.
+// Home: a topic on the stage, a constellation of other topics behind it, and
+// PLAY, which asks where this round's topic should come from. The wordmark, the
+// achievements/challenges row and the mode pills are deliberately not here yet.
 export default function Home() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -37,12 +49,29 @@ export default function Home() {
   // One value rather than a boolean per sheet: the two are mutually exclusive
   // by construction, so there is no state in which both are open. Stacked
   // modals are unreliable on Android anyway.
-  const [openSheet, setOpenSheet] = useState<"none" | "settings" | "category">(
-    "none"
-  );
+  const [openSheet, setOpenSheet] = useState<
+    "none" | "mode" | "settings" | "category"
+  >("none");
+
+  // Drives the red dot on the daily entry: true until today's topic has been
+  // opened on this device.
+  const [isDailyUnseen, setDailyUnseen] = useState(false);
+
+  // The titles drifting behind the stage. Drawn once on mount and then left
+  // alone: they are scenery, and re-rolling them on every PLAY would turn the
+  // background into a second thing competing for attention.
+  const [backdrop, setBackdrop] = useState<string[]>([]);
 
   useEffect(() => {
     loadGameSettings().then(setSettings);
+
+    hasSeenDailyTopic().then((seen) => setDailyUnseen(!seen));
+
+    fetchRandomTopics(ORBIT_POOL_SIZE)
+      .then((topics) => setBackdrop(topics.map((entry) => entry.title)))
+      // Scenery failing is not worth telling the user about — the screen works
+      // perfectly well without it.
+      .catch(() => setBackdrop([]));
   }, []);
 
   // Write on every press rather than on close: the sheet has no Cancel, so
@@ -61,7 +90,13 @@ export default function Home() {
     setOpenSheet("settings");
   };
 
-  const draw = async () => {
+  // Both modes share the same shape: fetch, show, and say something useful when
+  // there is nothing to show. Only where the topic comes from differs, so that
+  // is the one thing passed in.
+  const runDraw = async (
+    load: () => Promise<Topic | null>,
+    emptyMessage: string
+  ) => {
     // Guard against a double tap firing two draws — the second result would
     // overwrite the first and the topic would visibly flicker.
     if (isDrawing) return;
@@ -70,16 +105,11 @@ export default function Home() {
     setError(null);
 
     try {
-      // Random mode passes nothing and draws from the whole pool; category mode
-      // passes the chosen key. `categoryKey` is only ever non-null once a
-      // category was actually picked, so the mode check is the only guard.
-      const next = await fetchRandomTopic(
-        settings.topicMode === "category" ? settings.categoryKey : null
-      );
+      const next = await load();
       setTopic(next);
 
       if (!next) {
-        setError("No topics available yet.");
+        setError(emptyMessage);
       }
     } catch (cause) {
       // The thrown message already says what failed; the topic on screen stays
@@ -90,24 +120,66 @@ export default function Home() {
     }
   };
 
+  const drawStandard = () => {
+    setOpenSheet("none");
+    void runDraw(
+      // Random mode passes nothing and draws from the whole pool; category mode
+      // passes the chosen key. `categoryKey` is only ever non-null once a
+      // category was actually picked, so the mode check is the only guard.
+      () =>
+        fetchRandomTopic(
+          settings.topicMode === "category" ? settings.categoryKey : null
+        ),
+      "No topics available yet."
+    );
+  };
+
+  const drawDaily = () => {
+    setOpenSheet("none");
+    void runDraw(async () => {
+      const daily = await fetchDailyTopic();
+
+      // Only counts as seen once one actually arrived — an exhausted pool or a
+      // failed request must not clear the dot.
+      if (daily) {
+        setDailyUnseen(false);
+        void markDailyTopicSeen();
+      }
+
+      return daily;
+    }, "You have learned every topic there is. Nothing new for today.");
+  };
+
   const reset = async () => {
     await clearOnboarding();
     router.replace("/welcome");
   };
 
   return (
-    <View
-      className="flex-1 bg-bg px-5"
-      style={{ paddingTop: insets.top + 44, paddingBottom: insets.bottom + 30 }}
-    >
+    // Two layers: the star field edge to edge, and the padded content on top of
+    // it. The backdrop sits outside the padding on purpose — Yoga insets
+    // absolutely positioned children by the parent's padding, so from inside it
+    // the field would stop short of the screen edges.
+    <View className="flex-1 bg-bg">
+      <ConstellationBackdrop />
+
+      <View
+        className="flex-1 px-5"
+        style={{
+          paddingTop: insets.top + 44,
+          paddingBottom: insets.bottom + 30,
+        }}
+      >
       {/* the stage: one topic, centred, filling the space above the button */}
       <View className="flex-1 items-center justify-center">
+        <TopicOrbit titles={backdrop} />
+
         {topic ? (
           <Text className="text-center text-display font-sans-extrabold uppercase text-text">
             {topic.title}
           </Text>
         ) : (
-          <Text className="text-center text-display font-sans-extrabold uppercase text-text-disabled">
+          <Text className="text-center text-display font-sans-extrabold uppercase text-text">
             Your topic
           </Text>
         )}
@@ -131,14 +203,22 @@ export default function Home() {
 
       <Button
         label={isDrawing ? "Drawing…" : "Play"}
-        onPress={draw}
+        onPress={() => setOpenSheet("mode")}
         disabled={isDrawing}
         variant="hero"
-        accessibilityLabel="Play — draw a random topic"
+        accessibilityLabel="Play — choose where the topic comes from"
       />
 
       {/* Dev convenience: re-run onboarding without reinstalling. Ghost styling
           on purpose — the screen may only ever have one filled button. */}
+      <PlayModeSheet
+        visible={openSheet === "mode"}
+        dailyUnseen={isDailyUnseen}
+        onStandard={drawStandard}
+        onDaily={drawDaily}
+        onClose={() => setOpenSheet("none")}
+      />
+
       <SettingsSheet
         visible={openSheet === "settings"}
         settings={settings}
@@ -165,6 +245,7 @@ export default function Home() {
           Reset onboarding
         </Text>
       </Pressable>
+      </View>
     </View>
   );
 }
