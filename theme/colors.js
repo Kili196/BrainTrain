@@ -45,6 +45,15 @@ const colors = {
   // dims the screen behind a sheet or dialog (design §12)
   scrim: "rgba(0,0,0,0.6)",
 
+  // the streak flame, and nothing else (design §1). Grey at zero, orange while
+  // a streak is running, violet once it passes 30 days — the colour is the
+  // reward, so it must never be borrowed for anything that is not the streak.
+  streak: {
+    idle: "#6a6a6a",
+    flame: "#ff6e14", // rgba(255,110,20)
+    long: "#9650ff", // rgba(150,80,255)
+  },
+
   // status
   error: "#c46a6a",
   danger: "#ff3b30",

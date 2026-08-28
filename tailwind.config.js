@@ -53,6 +53,9 @@ module.exports = {
         // list items and sheet rows — design §2 "H4 / list item"
         h4: ["14.5px", { lineHeight: "20px", letterSpacing: "-0.15px" }],
         body: ["13px", { lineHeight: "21px" }],
+        // large figures — the prep/speak tiles, profile points. Always paired
+        // with fontVariant tabular-nums (design §2).
+        stat: ["30px", { lineHeight: "32px" }],
         eyebrow: ["10px", { lineHeight: "12px", letterSpacing: "2px" }],
         button: ["14px", { lineHeight: "17px", letterSpacing: "1.7px" }],
         // the PLAY / START buttons only — design §4 "big button"

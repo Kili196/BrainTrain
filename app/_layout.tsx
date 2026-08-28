@@ -41,7 +41,13 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: colors.bg },
         }}
-      />
+      >
+        {/* Every screen is near-black, so a cross-fade reads much like the
+            black veil the design calls for (§12) without a custom layer. The
+            veil itself is an app-wide pattern and should land once, across all
+            navigation, rather than on this one route. */}
+        <Stack.Screen name="play" options={{ animation: "fade" }} />
+      </Stack>
     </SafeAreaProvider>
   );
 }
