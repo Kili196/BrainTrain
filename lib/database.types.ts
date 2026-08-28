@@ -39,6 +39,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_topics: {
+        Row: {
+          created_at: string
+          day: string
+          topic_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          topic_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: true
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           birth_date: string | null
@@ -183,9 +209,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      daily_topic: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "topics"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       delete_own_account: { Args: never; Returns: undefined }
-      random_topic: {
-        Args: { p_category?: string }
+      random_topics: {
+        Args: { p_category?: string; p_count?: number }
         Returns: {
           category: string
           created_at: string

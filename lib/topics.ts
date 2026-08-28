@@ -71,24 +71,59 @@ export async function fetchRandomTopic(
   // destructured further down and the two would shadow each other.
   categoryKey?: CategoryKey | null
 ): Promise<Topic | null> {
-  const { data, error } = await supabase
-    // Undefined leaves the argument out entirely, so Postgres applies its own
-    // default of null. Sending null explicitly would work too, but this keeps
-    // the two definitions of "no filter" in one place — the function's.
-    .rpc("random_topic", categoryKey ? { p_category: categoryKey } : {})
-    .maybeSingle();
+  const [topic] = await fetchRandomTopics(1, categoryKey);
+  return topic ?? null;
+}
+
+// Several topics in one draw, for the constellation behind the stage on Home.
+// The count is capped inside the database, so asking for more than it allows
+// returns the cap rather than failing.
+export async function fetchRandomTopics(
+  count: number,
+  categoryKey?: CategoryKey | null
+): Promise<Topic[]> {
+  const { data, error } = await supabase.rpc("random_topics", {
+    // Undefined leaves an argument out entirely and Postgres applies its own
+    // default, which keeps the definition of "no filter" in one place.
+    ...(categoryKey ? { p_category: categoryKey } : {}),
+    p_count: count,
+  });
 
   if (error) {
-    throw new Error(`Failed to draw a random topic: ${error.message}`);
+    throw new Error(`Failed to draw topics: ${error.message}`);
   }
 
-  if (!data) {
-    return null;
-  }
-
-  // The function returns the full row including `status`; the rest of the app
+  // The function returns full rows including `status`; the rest of the app
   // works with the narrower `Topic`, so drop it here rather than widening the
   // type for one caller.
+  return (data ?? []).map(
+    ({ id, slug, category, title, description, created_at, updated_at }) => ({
+      id,
+      slug,
+      category,
+      title,
+      description,
+      created_at,
+      updated_at,
+    })
+  );
+}
+
+// Today's topic — the same one for everyone, drawn once per UTC day and never
+// repeated. The choosing happens in `daily_topic()`, because two devices asking
+// at the same moment must not end up with different answers.
+//
+// Returns null when every published topic has already had its day. That is not
+// an error: the pool is finite by design, and the screen says so.
+export async function fetchDailyTopic(): Promise<Topic | null> {
+  const { data, error } = await supabase.rpc("daily_topic").maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load the daily topic: ${error.message}`);
+  }
+
+  if (!data) return null;
+
   const { id, slug, category, title, description, created_at, updated_at } =
     data;
 
