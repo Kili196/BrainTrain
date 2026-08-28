@@ -149,10 +149,19 @@ Field rules:
 - Every wrong option must be plausible to someone who half-knows the topic.
   Obvious filler ("It is magic") wastes an option, and under all-or-nothing
   scoring it also makes the whole question free.
-- **Correct and incorrect options must be indistinguishable by shape.** No
-  pattern where the true ones are longer, more hedged, or more technical — that
-  is the tell that lets people score without knowing anything, and with multiple
-  answers a shape tell gives away the entire set at once.
+- **Within one question, the longest and the shortest option must differ by at
+  most 10 characters.** Where that is hard, lengthen the wrong options rather
+  than shortening the correct ones: a fuller distractor is a better distractor,
+  while a trimmed correct answer usually just gets vaguer.
+- **An option must never be wrong because it overstates.** If a wrong option
+  uses *always / never / all / none / every / only*, either drop the word and
+  make the option wrong on substance, or give a correct option in the same
+  question a comparably absolute word. The same rule in reverse for hedges —
+  *often / usually / can / tend / generally* must not be a marker of the correct
+  answers.
+- Together those two are the shape rule: **correct and wrong options must be
+  indistinguishable by anything but meaning.** With several correct answers a
+  shape tell does not give away one answer, it gives away the whole set.
 - Each option must stand or fall on its own. Do not write options that only make
   sense together, or that contradict each other so that ticking both is
   obviously wrong.
@@ -172,7 +181,31 @@ Field rules:
 
 ---
 
-## 6. Not built yet
+## 6. Why the shape rule carries a number
+
+The first generated batch (125 topics, 625 questions, 2026-08-28) satisfied every
+other rule in this file — all titles matched, no constraint was violated, and the
+correct answers were spread evenly across the four positions. It still leaked,
+because "do not make the correct ones longer" was left to judgement:
+
+| Measured over 625 questions | Found | Should be |
+|---|---|---|
+| Longest option is correct | 67% | ~48% |
+| Shortest option is correct | 36% | ~48% |
+| *always / never / all / only* in an option | 11.5% of wrong, 3.9% of correct | about equal |
+| *often / usually / can / tend* in an option | 7.6% of correct, 3.7% of wrong | about equal |
+
+Ticking every above-average-length option, without reading the question at all,
+scored 14.4% under all-or-nothing rules against 6.7% for random guessing — more
+than double, from knowing nothing.
+
+That is why the rule above is a character count and not an intention. It is the
+only part of this brief that can be checked mechanically, so it is the part that
+has to be stated mechanically.
+
+---
+
+## 7. Not built yet
 
 There is no importer. Topics go through `supabase/content/gen-topics.js` into a
 seed migration (`npm run db:seed`), and questions will need the same: a generator
