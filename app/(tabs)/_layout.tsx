@@ -23,6 +23,7 @@ const TAB_BAR_HEIGHT = 49;
 // The tab bar leaves last on the way out and comes back first on the way in.
 const NAV_DELAY_AWAY = 120;
 const NAV_DELAY_BACK = 0;
+const NAV_DISTANCE = 1.25;
 
 // The black layer, which the mockup runs slightly faster than everything else.
 const FADE_MS = 280;
@@ -46,9 +47,10 @@ export default function MainTabsLayout() {
 
   useEffect(() => {
     const animation = Animated.timing(navTravel, {
-      // 105% of its own height: far enough that the hairline at its top edge
-      // clears the screen too.
-      toValue: round.starting ? barHeight * 1.05 : 0,
+      // The mockup travels 105% of its own height, just far enough to clear the
+      // screen. Overshooting means it covers more ground in the same 620ms, and
+      // that speed is the point — the bar should look thrown out, not walked.
+      toValue: round.starting ? barHeight * NAV_DISTANCE : 0,
       duration: CHROME_TRANSFORM_MS,
       delay: round.starting ? NAV_DELAY_AWAY : NAV_DELAY_BACK,
       easing: CHROME_EASING,

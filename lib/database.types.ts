@@ -94,7 +94,7 @@ export type Database = {
       }
       quiz_questions: {
         Row: {
-          correct_index: number
+          correct_indexes: number[]
           explanation: string | null
           id: string
           options: Json
@@ -103,7 +103,7 @@ export type Database = {
           topic_id: string
         }
         Insert: {
-          correct_index: number
+          correct_indexes: number[]
           explanation?: string | null
           id?: string
           options: Json
@@ -112,7 +112,7 @@ export type Database = {
           topic_id: string
         }
         Update: {
-          correct_index?: number
+          correct_indexes?: number[]
           explanation?: string | null
           id?: string
           options?: Json

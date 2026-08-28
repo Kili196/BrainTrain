@@ -45,7 +45,7 @@ const FADE_START_MS = 300;
 const HANDOFF_DELAY_MS = 620;
 
 // The stage does not leave with the chrome, it grows.
-const STAGE_FOCUS_SCALE = 1.06;
+const STAGE_FOCUS_SCALE = 1.1;
 const STAGE_MS = 720;
 const STAGE_EASING = Easing.bezier(0.5, 0, 0.2, 1);
 
@@ -242,7 +242,7 @@ export default function Home() {
         }}
       >
       {/* Leaves upwards, and is the first to go. */}
-      <FlyAway away={starting} distance={-1.3} delayAway={0} delayBack={120}>
+      <FlyAway away={starting} distance={-1.6} delayAway={0} delayBack={120}>
         <HomeHeader
           streakDays={PLACEHOLDER_STREAK_DAYS}
           hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
@@ -294,7 +294,7 @@ export default function Home() {
 
       {/* Everything below the stage leaves as one block, downwards, just after
           the header starts up. */}
-      <FlyAway away={starting} distance={1.7} delayAway={60} delayBack={60}>
+      <FlyAway away={starting} distance={2.05} delayAway={60} delayBack={60}>
         <View className="items-center gap-4">
           <Pressable
             onPress={() => setOpenSheet("settings")}
