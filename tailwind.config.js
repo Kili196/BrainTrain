@@ -18,12 +18,10 @@ module.exports = {
   theme: {
     extend: {
       colors,
-      borderColor: {
-        DEFAULT: "rgba(255,255,255,0.09)",
-        divider: "rgba(255,255,255,0.08)",
-        // sheets and dialogs sit above the page and carry a brighter hairline
-        modal: "rgba(255,255,255,0.12)",
-      },
+      // border, border-divider, border-modal — straight out of theme/colors.js,
+      // so the same three hairlines are available as classes here and as values
+      // in a style object.
+      borderColor: colors.border,
       borderRadius: {
         sm: "12px",
         md: "14px",
@@ -56,7 +54,13 @@ module.exports = {
         // large figures — the prep/speak tiles, profile points. Always paired
         // with fontVariant tabular-nums (design §2).
         stat: ["30px", { lineHeight: "32px" }],
+        // the countdown inside the 230px timer ring (design §12). Bigger than
+        // `stat`, which belongs to the 118px score ring — the number is scaled
+        // to the ring it sits in.
+        timer: ["44px", { lineHeight: "48px" }],
         eyebrow: ["10px", { lineHeight: "12px", letterSpacing: "2px" }],
+        // bottom tab labels only (design §12)
+        tab: ["9.5px", { lineHeight: "12px" }],
         button: ["14px", { lineHeight: "17px", letterSpacing: "1.7px" }],
         // the PLAY / START buttons only — design §4 "big button"
         "button-lg": ["20px", { lineHeight: "24px", letterSpacing: "2.8px" }],

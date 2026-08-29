@@ -40,6 +40,20 @@ const colors = {
   // the shimmer band sweeping across the hero button (design §4)
   shimmer: "rgba(255,255,255,0.55)",
 
+  // inactive tab icons and labels (design §1). Dimmer than any text colour —
+  // the bar is meant to recede until it is looked for.
+  "nav-inactive": "rgba(255,255,255,0.30)",
+
+  // hairlines (design §1). tailwind.config.js feeds `borderColor` from these,
+  // so `border-divider` in a className and `colors.border.divider` in a style
+  // object are the same value — which the tab bar needs, since it draws its top
+  // border on an Animated.View and NativeWind's className does not reach those.
+  border: {
+    DEFAULT: "rgba(255,255,255,0.09)",
+    divider: "rgba(255,255,255,0.08)",
+    modal: "rgba(255,255,255,0.12)",
+  },
+
   // stepper and icon-button fills (design §1 "inactive-fill")
   "inactive-fill": "rgba(255,255,255,0.06)",
   // dims the screen behind a sheet or dialog (design §12)
