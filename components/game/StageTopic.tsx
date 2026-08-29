@@ -47,12 +47,13 @@ export function StageTopic({ title }: { title: string }) {
 
   return (
     <Animated.View
-      // Decoration-free but non-interactive: the drag surface underneath has to
-      // keep receiving touches that land on the word.
-      pointerEvents="none"
       style={[
         StyleSheet.absoluteFill,
         {
+          // Non-interactive: the drag surface underneath has to keep receiving
+          // touches that land on the word. In the style, not as a prop —
+          // react-native-web ignores the prop.
+          pointerEvents: "none",
           justifyContent: "center",
           opacity: progress.interpolate({
             inputRange: [0, 0.55, 1],

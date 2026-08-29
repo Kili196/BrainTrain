@@ -222,12 +222,12 @@ export function TopicOrbit({
       {...pan.panHandlers}
     >
       <View
-        // Decoration: five half-visible words are noise to a screen reader, and
-        // they must not become the touch target instead of the surface.
-        pointerEvents="none"
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        style={StyleSheet.absoluteFill}
+        // Decoration: five half-visible words are noise to a screen reader, and
+        // they must not become the touch target instead of the drag surface.
+        // In the style, not as a prop — react-native-web ignores the prop.
+        style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}
       >
         {titles.length > 0
           ? WOBBLE.map((wobble, i) => {

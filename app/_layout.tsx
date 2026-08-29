@@ -47,6 +47,7 @@ export default function RootLayout() {
             veil itself is an app-wide pattern and should land once, across all
             navigation, rather than on this one route. */}
         <Stack.Screen name="play" options={{ animation: "fade" }} />
+        <Stack.Screen name="recording" options={{ animation: "fade" }} />
       </Stack>
     </SafeAreaProvider>
   );

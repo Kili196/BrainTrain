@@ -79,6 +79,12 @@ export function FlyAway({
     <Animated.View
       onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
       style={{
+        // Opacity 0 does not stop a view from taking touches, and a transform
+        // does not move its hit area out of the way either — without this the
+        // buttons that just flew off screen still swallow taps aimed at
+        // whatever replaced them. In the style rather than as a prop, because
+        // react-native-web ignores the prop.
+        pointerEvents: away ? "none" : "auto",
         opacity: visible,
         transform: [
           {

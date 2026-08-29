@@ -28,11 +28,25 @@ export type ButtonProps = {
 
 // Resting and pressed shadow depth per variant. The hero sits 1px deeper and
 // travels 5px instead of 4, which is what makes it feel heavier under the thumb.
+//
+// The hero is the one button whose proportions are the point, so it carries its
+// own width and takes its height from a ratio rather than from padding. Both
+// measured off the Home mockup: 237px wide inside 347px of content, and 65px
+// tall. It is NOT full width — it sits inset from the screen padding again, and
+// filling the row makes it far too heavy.
+//
+// A share of the row rather than a fixed 237px, so it keeps the same shape on a
+// wider phone instead of shrinking into the middle of it.
+const HERO_WIDTH = "68%";
+const HERO_ASPECT_RATIO = 3.6;
+
 const VARIANTS = {
   primary: {
     fill: "bg-accent",
     text: "text-button",
     padding: "px-7 py-4",
+    width: "100%",
+    aspectRatio: null,
     restShadow: 6,
     pressShadow: 2,
     travel: 4,
@@ -40,7 +54,9 @@ const VARIANTS = {
   hero: {
     fill: "bg-accent-raised",
     text: "text-button-lg",
-    padding: "px-7 py-5",
+    padding: "px-7",
+    width: HERO_WIDTH,
+    aspectRatio: HERO_ASPECT_RATIO,
     restShadow: 7,
     pressShadow: 2,
     travel: 5,
@@ -88,11 +104,13 @@ function Shimmer({ width }: { width: number }) {
 
   return (
     <Animated.View
-      // Decorative only — never announce it, never let it swallow a tap.
-      pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={{
+        // Decorative only — never announce it, never let it swallow a tap. In
+        // the style, not as a prop: react-native-web ignores the prop, and this
+        // band sits directly over the button's own label.
+        pointerEvents: "none",
         position: "absolute",
         top: 0,
         bottom: 0,
@@ -134,8 +152,13 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled }}
-      className="w-full"
-      style={disabled ? { opacity: 0.35 } : undefined}
+      style={{
+        // Centred rather than stretched: the hero is narrower than the row it
+        // sits in, and the primary fills it.
+        width: style.width,
+        alignSelf: "center",
+        ...(disabled ? { opacity: 0.35 } : null),
+      }}
     >
       {({ pressed }) => {
         // Only move when the press can actually do something — a disabled
@@ -154,7 +177,10 @@ export function Button({
               // overflow-hidden clips the shimmer band to the rounded face —
               // without it the band sweeps out across the whole screen.
               className={`w-full items-center justify-center overflow-hidden rounded-lg ${style.fill} ${style.padding}`}
-              style={{ transform: [{ translateY: isDown ? style.travel : 0 }] }}
+              style={{
+                aspectRatio: style.aspectRatio ?? undefined,
+                transform: [{ translateY: isDown ? style.travel : 0 }],
+              }}
               onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
             >
               <Text

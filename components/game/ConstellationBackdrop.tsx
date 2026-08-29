@@ -48,10 +48,10 @@ const DOTS = [
 export function ConstellationBackdrop() {
   return (
     <View
-      pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={StyleSheet.absoluteFill}
+      // In the style, not as a prop: react-native-web ignores the prop.
+      style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}
     >
       <Svg
         width="100%"
