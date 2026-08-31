@@ -23,6 +23,13 @@ export type ButtonProps = {
   onPress: () => void;
   disabled?: boolean;
   variant?: ButtonVariant;
+  // Design §4 defines two disabled treatments and names where each belongs.
+  //   dim   — the button at 35% (the onboarding CTA).
+  //   muted — it stops being blue: a 6% white fill, faint label, no shadow (the
+  //           questions CTA). Use this where the button spends most of its life
+  //           disabled, because a dimmed blue button still reads as the thing to
+  //           press.
+  disabledStyle?: "dim" | "muted";
   accessibilityLabel?: string;
 };
 
@@ -137,9 +144,14 @@ export function Button({
   onPress,
   disabled = false,
   variant = "primary",
+  disabledStyle = "dim",
   accessibilityLabel,
 }: ButtonProps) {
   const style = VARIANTS[variant];
+
+  // Muted is a different button, not a faded one: no accent fill and no shadow
+  // to depress, so both are switched off rather than dimmed.
+  const muted = disabled && disabledStyle === "muted";
 
   // Measured once by onLayout below and only needed by the shimmer, which the
   // hero variant alone renders.
@@ -157,7 +169,7 @@ export function Button({
         // sits in, and the primary fills it.
         width: style.width,
         alignSelf: "center",
-        ...(disabled ? { opacity: 0.35 } : null),
+        ...(disabled && !muted ? { opacity: 0.35 } : null),
       }}
     >
       {({ pressed }) => {
@@ -169,14 +181,18 @@ export function Button({
         return (
           <View className="relative w-full">
             {/* hard offset shadow layer */}
-            <View
-              className="absolute inset-x-0 rounded-lg bg-accent-shadow"
-              style={{ top: offset, bottom: -offset }}
-            />
+            {muted ? null : (
+              <View
+                className="absolute inset-x-0 rounded-lg bg-accent-shadow"
+                style={{ top: offset, bottom: -offset }}
+              />
+            )}
             <View
               // overflow-hidden clips the shimmer band to the rounded face —
               // without it the band sweeps out across the whole screen.
-              className={`w-full items-center justify-center overflow-hidden rounded-lg ${style.fill} ${style.padding}`}
+              className={`w-full items-center justify-center overflow-hidden rounded-lg ${
+                muted ? "bg-inactive-fill" : style.fill
+              } ${style.padding}`}
               style={{
                 aspectRatio: style.aspectRatio ?? undefined,
                 transform: [{ translateY: isDown ? style.travel : 0 }],
@@ -184,7 +200,9 @@ export function Button({
               onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
             >
               <Text
-                className={`${style.text} font-sans-extrabold uppercase text-text`}
+                className={`${style.text} font-sans-extrabold uppercase ${
+                  muted ? "text-text-faint" : "text-text"
+                }`}
               >
                 {label}
               </Text>

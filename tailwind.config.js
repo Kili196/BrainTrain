@@ -23,6 +23,8 @@ module.exports = {
       // in a style object.
       borderColor: colors.border,
       borderRadius: {
+        // progress bar fills and segments — design §7
+        xs: "3px",
         sm: "12px",
         md: "14px",
         lg: "16px",
@@ -58,6 +60,8 @@ module.exports = {
         // `stat`, which belongs to the 118px score ring — the number is scaled
         // to the ring it sits in.
         timer: ["44px", { lineHeight: "48px" }],
+        // counters and chips — design §2 "Caption"
+        caption: ["11px", { lineHeight: "14px" }],
         eyebrow: ["10px", { lineHeight: "12px", letterSpacing: "2px" }],
         // bottom tab labels only (design §12)
         tab: ["9.5px", { lineHeight: "12px" }],
