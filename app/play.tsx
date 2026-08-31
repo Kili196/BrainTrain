@@ -7,6 +7,7 @@ import { ConstellationBackdrop } from "../components/game/ConstellationBackdrop"
 import { CountdownOverlay } from "../components/game/CountdownOverlay";
 import { FlyAway } from "../components/game/FlyAway";
 import { PrepTimer } from "../components/game/PrepTimer";
+import { RulesPanel } from "../components/game/RulesPanel";
 import { ArrowLeftIcon } from "../components/icons/ArrowLeftIcon";
 import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
@@ -214,6 +215,19 @@ export default function Play() {
             />
           </View>
         </View>
+
+        {/* Below the phase box rather than inside it: the box is a fixed height
+            the two phases share, and a panel that grows would have nowhere to
+            grow into. Leaves with the rest of the chrome — once the clock runs,
+            reading the rules is no longer the job. */}
+        <FlyAway
+          away={preparing}
+          distance={CHROME_DISTANCE}
+          delayAway={60}
+          delayBack={60}
+        >
+          <RulesPanel />
+        </FlyAway>
       </View>
 
       {/* Leaves upwards when preparation starts: there is no going back out of
