@@ -277,11 +277,7 @@ export default function Home() {
             }`}
             style={{ letterSpacing: 1.2 }}
           >
-            {isDrawing
-              ? "Topic drawn"
-              : topic
-                ? ""
-                : "Tap play — your first topic is drawn at random"}
+            {isDrawing ? "Topic drawn" : ""}
           </Text>
         </View>
 
@@ -328,6 +324,33 @@ export default function Home() {
               Reset onboarding
             </Text>
           </Pressable>
+
+          {/* The result screen otherwise costs a whole round to look at. Behind
+              __DEV__, unlike the row above it: that one is a convenience, this
+              one is a shortcut straight past the game and has no business in a
+              build. No topicId, so it lands without the explanations — the
+              chips and the score are what it is for. */}
+          {__DEV__ ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/quiz-result",
+                  params: {
+                    title: "Test round",
+                    results: "10110",
+                    picks: "0|1.2|0|2|3",
+                    seconds: "192",
+                  },
+                })
+              }
+              accessibilityRole="button"
+              className="py-2"
+            >
+              <Text className="text-body font-sans-bold text-text-muted">
+                Show a round result
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </FlyAway>
 
