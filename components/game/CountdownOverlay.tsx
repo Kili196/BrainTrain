@@ -59,15 +59,20 @@ export function CountdownOverlay({ running, onFinish }: CountdownOverlayProps) {
       return;
     }
 
+    // Past the last frame the countdown is over. Without this the effect would
+    // keep re-arming and hand off again every step.
+    if (step >= FRAMES.length) return;
+
     // One timer per step rather than an interval: the last step hands off
     // instead of advancing, and an interval would have to be torn down mid-tick
     // to do that.
     const id = setTimeout(() => {
-      setStep((current) => {
-        const next = current + 1;
-        if (next >= FRAMES.length) finish.current();
-        return next;
-      });
+      const next = step + 1;
+      setStep(next);
+      // Called from the timer, never from inside a setState updater. React runs
+      // updaters while rendering, so handing off from in there would navigate
+      // in the middle of this component's render.
+      if (next >= FRAMES.length) finish.current();
     }, STEP_MS);
 
     return () => clearTimeout(id);
