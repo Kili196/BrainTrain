@@ -141,7 +141,8 @@ gradient-like effects are radial SVG halos in the Knowledge net and the Analyzin
 | `danger` | `#ff3b30` | „Delete account", recording indicator, notification dot. |
 | `warning` / `imprecise` | `#a4823e` | IMPRECISE badge. |
 | `neutral` / `unsourced` | `#8a8a8a` | UNSOURCED badge. |
-| `success` | `#6f9fe0` | There is **no green in this product.** Positive states (high scores, correct answers, mastered nodes) are shown in `accent-light`. |
+| `success` | `#6f9fe0` | Positive states (high scores, correct answers, mastered nodes) are shown in `accent-light`. |
+| `result` | `#22e06a` (right), `#ff3b30` (wrong), 12% washes of each | Right and wrong on the quiz result screen, and nowhere else — the question chips, the reviewed answer rows, the review bullets. The Questions Result mockup draws green and red chips, which is why the no-green rule below carries this exception. Deliberately saturated where the status colours are muted. |
 | `streak` | `rgba(255,110,20,…)` orange, `rgba(150,80,255,…)` violett ab 30 Tagen, grau wenn 0 | Streak flame only. |
 
 ### Podium (Leaderboard, exclusive)
@@ -563,7 +564,7 @@ Screens that navigate away fade **in** to black (`veilIn 300ms`) and navigate af
 - Prefer a divider row (`border-top: 1px solid rgba(255,255,255,0.08)`) over a filled card for lists. At most one filled feature card per screen.
 - Every section starts with an eyebrow: 9.5–10px / 800 / `letter-spacing: 0.2em` / UPPERCASE / `#5f5f5f`.
 - All numbers use `font-variant-numeric: tabular-nums`.
-- **No green.** Positive and successful states use `#6f9fe0`.
+- **No green**, with exactly one exception: the quiz result screen, where right and wrong are `result.right` / `result.wrong` (its own mockup draws them that way). Every other positive or successful state uses `#6f9fe0`. Like the streak scale, those two belong to that screen and must not be borrowed.
 - No emoji except country flags in leaderboard and profile.
 - Do not introduce a new hue. If a new state needs a colour, use an opacity variant of an existing one.
 - Icons are hand-written 24-viewBox stroke SVGs at `stroke-width: 1.7–2` in `currentColor`. Do not add an icon library and do not mix filled and stroked icons in one row.
@@ -601,7 +602,9 @@ scrim           rgba(0,0,0,0.6)
 error           #c46a6a / text #e08a8a
 danger          #ff3b30
 warning         #a4823e
-success         #6f9fe0   (no green in this product)
+success         #6f9fe0   (green only in result.right, see §1)
+result.right    #22e06a   (quiz result screen only)
+result.wrong    #ff3b30   (quiz result screen only)
 
 TYPOGRAPHY   Archivo, system-ui, sans-serif · 400/500/600/700/800
 display      34px / 800 / 1.08 / -0.02em
