@@ -62,6 +62,11 @@ export default function Home() {
   // reel the draw spins through.
   const [backdrop, setBackdrop] = useState<string[]>([]);
 
+  // The y of the hairline under the header, measured rather than guessed: the
+  // header's height depends on the streak, the notification dot and the type
+  // the OS hands us. The star field starts there — see below.
+  const [headerBottom, setHeaderBottom] = useState(0);
+
   const { topic, title, isDrawing, error, draw } = useTopicDraw(backdrop);
 
   // Owned by the tab layout, because the black layer has to cover the tab bar
@@ -232,7 +237,11 @@ export default function Home() {
     // absolutely positioned children by the parent's padding, so from inside it
     // the field would stop short of the screen edges.
     <View className="flex-1 bg-bg">
-      <ConstellationBackdrop />
+      {/* Home is the one screen that starts the field below its header: the
+          achievements, streak and challenges row needs a clean ground, and a
+          star behind that row is noise rather than atmosphere. Every other
+          screen gets the whole field. */}
+      <ConstellationBackdrop top={headerBottom} />
 
       <View
         className="flex-1 px-5"
@@ -243,10 +252,21 @@ export default function Home() {
       >
       {/* Leaves upwards, and is the first to go. */}
       <FlyAway away={starting} distance={-1.6} delayAway={0} delayBack={120}>
-        <HomeHeader
-          streakDays={PLACEHOLDER_STREAK_DAYS}
-          hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
-        />
+        <View
+          // y is already measured from the top of the screen — Yoga reports a
+          // child's position inside the parent's border box, so the padding
+          // above is included. The fly-away's transform is not, which is what
+          // we want: the field must not follow the header off-screen.
+          onLayout={(event) => {
+            const { y, height } = event.nativeEvent.layout;
+            setHeaderBottom(y + height);
+          }}
+        >
+          <HomeHeader
+            streakDays={PLACEHOLDER_STREAK_DAYS}
+            hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
+          />
+        </View>
       </FlyAway>
 
       {/* The stage never leaves — it grows, on a slower curve than the chrome,
@@ -328,21 +348,31 @@ export default function Home() {
           {/* The result screen otherwise costs a whole round to look at. Behind
               __DEV__, unlike the row above it: that one is a convenience, this
               one is a shortcut straight past the game and has no business in a
-              build. No topicId, so it lands without the explanations — the
-              chips and the score are what it is for. */}
+              build.
+
+              It draws a real topic on the way, because the result screen
+              re-fetches its questions by id: without one, `questions` stays
+              null, the chips are disabled and the review section has nothing to
+              show — two thirds of the screen this shortcut exists to look at.
+              The outcomes stay invented; only the topic is real. */}
           {__DEV__ ? (
             <Pressable
-              onPress={() =>
+              onPress={async () => {
+                // Quiet on failure: a shortcut that lands without explanations
+                // is still worth more than one that does nothing.
+                const topic = await fetchRandomTopic().catch(() => null);
+
                 router.push({
                   pathname: "/quiz-result",
                   params: {
-                    title: "Test round",
+                    ...(topic ? { topicId: topic.id } : {}),
+                    title: topic?.title ?? "Test round",
                     results: "10110",
                     picks: "0|1.2|0|2|3",
                     seconds: "192",
                   },
-                })
-              }
+                });
+              }}
               accessibilityRole="button"
               className="py-2"
             >
