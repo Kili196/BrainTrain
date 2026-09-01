@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Animated, Easing, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
-import { ConstellationBackdrop } from "../components/game/ConstellationBackdrop";
-import { ArrowLeftIcon } from "../components/icons/ArrowLeftIcon";
+import { Waveform } from "../components/game/Waveform";
 import { MicIcon } from "../components/icons/MicIcon";
-import { SkipIcon } from "../components/icons/SkipIcon";
+import { PauseIcon } from "../components/icons/PauseIcon";
+import { PlayIcon } from "../components/icons/PlayIcon";
+import { ProgressRing } from "../components/ui/ProgressRing";
 import {
   DEFAULT_SETTINGS,
   formatDuration,
@@ -16,18 +17,29 @@ import {
 import { useCountdown } from "../lib/use-countdown";
 import { colors } from "../theme/colors";
 
-// The speaking phase. The clock is real; the microphone is not.
+// The speaking phase, drawn from the "Recording Screen" mockup: the REC pill,
+// the topic, a ring around the time, the waveform, and the pause disc.
 //
-// Still missing: permission handling, the recording itself, a visible recording
-// state, and somewhere to put the file. What is here is the part the rest of
-// the round needs — a speaking time that runs out and hands over to the
-// questions. Audio stays on the device per CLAUDE.md; only metadata goes to the
-// server.
+// THE MICROPHONE IS NOT REAL. Nothing is captured, nothing is stored, and the
+// waveform is a fixed pattern rather than a signal — the line at the bottom of
+// the screen says so, and it must keep saying so until there is a recording
+// behind it. What is real is the clock, the pause, and the hand-off.
 //
-// When the recording lands, the skip button below becomes ANALYSE (design §4)
-// and stops the recording instead of just the clock.
-const MIC_DISC_SIZE = 86;
-const SKIP_BUTTON_SIZE = 76;
+// When the recording lands: expo-audio with permissions on both platforms, the
+// pause disc pausing the take rather than only the clock, the waveform reading
+// metering, and the audio staying on the device — only metadata goes to the
+// server, per CLAUDE.md.
+const RING_SIZE = 230;
+const RING_STROKE = 8;
+
+// Design §4 sizes the app's large round buttons at 76–86px. This one carries
+// the hard offset shadow every accent-filled button in the app has: the mockup
+// draws the disc flat, but §14 is explicit that the press-down is never
+// dropped, and the disc on quiz-intro sets the precedent.
+const PAUSE_SIZE = 86;
+const SHADOW_REST = 6;
+const SHADOW_PRESS = 2;
+const PRESS_TRAVEL = 4;
 
 export default function Recording() {
   const insets = useSafeAreaInsets();
@@ -44,7 +56,18 @@ export default function Recording() {
   // before we know how long it is. See lib/use-countdown for why this is a
   // timestamp and not a counter.
   const [endsAt, setEndsAt] = useState<number | null>(null);
-  const secondsLeft = useCountdown(endsAt);
+
+  // The seconds the clock was holding when it was paused, and the only place
+  // that number lives while it is stopped. Non-null IS the paused state — a
+  // separate boolean could disagree with it.
+  const [held, setHeld] = useState<number | null>(null);
+
+  const paused = held !== null;
+  const secondsLeft = useCountdown(paused ? null : endsAt);
+
+  // Falls back to the stored time until the countdown has its deadline, so the
+  // number never flashes a placeholder on the way in.
+  const remaining = held ?? secondsLeft ?? settings.speakingSeconds;
 
   useEffect(() => {
     loadGameSettings().then((stored) => {
@@ -53,21 +76,66 @@ export default function Recording() {
     });
   }, []);
 
+  // The ring runs on its own clock rather than on the countdown's. `secondsLeft`
+  // arrives once a second, and an arc redrawn once a second ticks visibly — on
+  // a 230px ring one second is several pixels of travel, so it reads as a
+  // stutter rather than as time passing. This animates straight to empty over
+  // whatever is actually left, and the digits keep their own second-by-second
+  // rhythm underneath.
+  const ring = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // Paused returns before starting anything, so the cleanup of the previous
+    // run has already stopped the arc and it holds exactly where it was.
+    if (endsAt === null || paused) return;
+
+    const total = settings.speakingSeconds * 1000;
+    const left = Math.max(0, endsAt - Date.now());
+
+    // Resuming picks up from the fraction that is left, not from full.
+    ring.setValue(total > 0 ? left / total : 0);
+
+    const run = Animated.timing(ring, {
+      toValue: 0,
+      duration: left,
+      // Linear, because it is a clock. Any easing would make it lie.
+      easing: Easing.linear,
+      // strokeDashoffset is an SVG prop, not a transform — the native driver
+      // cannot carry it.
+      useNativeDriver: false,
+    });
+
+    run.start();
+    return () => run.stop();
+  }, [endsAt, paused, settings.speakingSeconds, ring]);
+
+  const togglePause = useCallback(() => {
+    if (held !== null) {
+      // Resuming rebuilds the deadline out of what was left, rather than
+      // reusing the old one — which by now is in the past by exactly the pause.
+      setEndsAt(Date.now() + held * 1000);
+      setHeld(null);
+      return;
+    }
+
+    setHeld(secondsLeft ?? settings.speakingSeconds);
+  }, [held, secondsLeft, settings.speakingSeconds]);
+
   const handOffToQuestions = useCallback(() => {
     // How long was actually spoken: the whole speaking time when the clock ran
     // out, less than that when it was cut short here. The intro screen shows it
     // back, and it is the only place that number survives.
-    const spoken = settings.speakingSeconds - (secondsLeft ?? 0);
+    const spoken = settings.speakingSeconds - remaining;
 
     // replace, not push: a finished speaking phase is not somewhere to come
     // back to.
     router.replace({
       pathname: "/quiz-intro",
-      params: { topicId, title, spoken: String(spoken) },
+      params: { topicId, title, spoken: String(Math.max(0, spoken)) },
     });
-  }, [router, topicId, title, settings.speakingSeconds, secondsLeft]);
+  }, [router, topicId, title, settings.speakingSeconds, remaining]);
 
-  // Time is up. The same hand-off the skip button makes: those are the only two
+  // Time is up. The same hand-off the skip link makes: those are the only two
   // ways out of the speaking phase, and they end it identically.
   useEffect(() => {
     if (secondsLeft !== 0) return;
@@ -79,87 +147,138 @@ export default function Recording() {
   }
 
   return (
-    <View className="flex-1 overflow-hidden bg-bg">
-      <ConstellationBackdrop />
-
-      <View
-        className="flex-1 justify-center gap-10 px-6"
-        style={{ paddingBottom: insets.bottom + 30 }}
-      >
-        <View className="items-center gap-2.5">
-          <Text className="text-eyebrow font-sans-extrabold uppercase text-text-secondary">
-            Your topic
+    <View
+      className="flex-1 bg-bg px-6"
+      style={{ paddingTop: insets.top + 14, paddingBottom: insets.bottom + 20 }}
+    >
+      <View className="flex-row items-center justify-between">
+        {/* Ghost, design §4 — leaving a round should not look like the thing to
+            do. replace, so an abandoned round is not on the back stack. */}
+        <Pressable
+          onPress={() => router.replace("/home")}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel the round and go back home"
+          hitSlop={12}
+          className="py-2"
+        >
+          <Text className="text-body font-sans-bold text-text-secondary">
+            ← Cancel
           </Text>
-          <Text className="text-center text-h1 font-sans-extrabold text-text">
-            {title}
-          </Text>
-        </View>
+        </Pressable>
 
-        <View className="items-center gap-6">
-          {/* The idle mic disc from the design: a quiet filled circle, not a
-              button — there is nothing to press until recording exists. */}
+        {/* The one red thing on the screen. Paused says the word rather than
+            only going grey: state carried by colour alone is what §14 and the
+            accessibility rules both rule out. */}
+        <View
+          className={`flex-row items-center gap-2 rounded-full px-3 py-1.5 ${
+            paused ? "bg-inactive-fill" : "bg-danger-wash"
+          }`}
+        >
           <View
-            className="items-center justify-center rounded-full border bg-card-alt"
-            style={{ width: MIC_DISC_SIZE, height: MIC_DISC_SIZE }}
+            className={`h-1.5 w-1.5 rounded-full ${
+              paused ? "bg-text-muted" : "bg-danger"
+            }`}
+          />
+          <Text
+            className={`text-eyebrow font-sans-extrabold uppercase tracking-pill ${
+              paused ? "text-text-muted" : "text-danger"
+            }`}
           >
-            <MicIcon size={40} color={colors.text.secondary} />
-          </View>
-
-          <View className="items-center gap-2">
-            <Text className="text-eyebrow font-sans-extrabold uppercase text-text-secondary">
-              Speaking time
-            </Text>
-            <Text
-              className="text-stat font-sans-extrabold text-text"
-              style={{ fontVariant: ["tabular-nums"] }}
-            >
-              {/* The stored time until the countdown has its deadline, so the
-                  number never flashes a placeholder on the way in. */}
-              {formatDuration(secondsLeft ?? settings.speakingSeconds)}
-            </Text>
-          </View>
-
-          <Text className="max-w-[270px] text-center text-body font-sans text-text-muted">
-            Recording is not built yet — only the clock runs. The questions
-            follow when it reaches zero.
+            {paused ? "Paused" : "Rec"}
           </Text>
-
-          {/* Design §4's round icon button, in the position ANALYSE will take.
-              Until the recording exists there is nothing to analyse, so it does
-              the one thing it can: end the phase early. */}
-          <View className="items-center gap-3">
-            <Pressable
-              onPress={handOffToQuestions}
-              accessibilityRole="button"
-              accessibilityLabel="Skip the speaking time and go to the questions"
-              className="items-center justify-center rounded-full border bg-inactive-fill"
-              style={{ width: SKIP_BUTTON_SIZE, height: SKIP_BUTTON_SIZE }}
-            >
-              <SkipIcon size={28} color={colors.text.secondary} />
-            </Pressable>
-
-            <Text className="text-eyebrow font-sans-extrabold uppercase text-text-faint">
-              Skip to the questions
-            </Text>
-          </View>
         </View>
       </View>
 
-      {/* Only here because the screen is a placeholder — the real recording
-          screen has no way back out of a round in progress. */}
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        hitSlop={12}
-        className="absolute flex-row items-center gap-1.5"
-        style={{ top: insets.top + 16, left: 24 }}
-      >
-        <ArrowLeftIcon size={15} color={colors.text.secondary} />
-        <Text className="text-body font-sans-bold text-text-secondary">
-          Back
+      <View className="mt-7 gap-2.5">
+        <Text className="text-eyebrow font-sans-extrabold uppercase text-text-faint">
+          Your topic
         </Text>
-      </Pressable>
+        <Text className="text-h1 font-sans-extrabold text-text">{title}</Text>
+      </View>
+
+      {/* The three live things, spread through what is left of the screen: the
+          ring, the waveform, the control. */}
+      <View className="flex-1 items-center justify-evenly py-6">
+        {/* Drains rather than fills: the ring shows the time that is left,
+            which is the question anyone speaking is actually asking. */}
+        <ProgressRing size={RING_SIZE} stroke={RING_STROKE} progress={ring}>
+          <View className="items-center gap-1.5">
+            <MicIcon size={24} color={colors.accent.light} />
+            <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-accent-light">
+              {paused ? "Paused" : "Recording"}
+            </Text>
+            <Text
+              className="text-timer font-sans-extrabold text-text"
+              // Without this the digits change width and the whole number
+              // jitters once a second, which on a ring is impossible to miss.
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {formatDuration(remaining)}
+            </Text>
+          </View>
+        </ProgressRing>
+
+        <Waveform running={!paused} />
+
+        <Pressable
+          onPress={togglePause}
+          accessibilityRole="button"
+          accessibilityLabel={
+            paused ? "Resume the speaking time" : "Pause the speaking time"
+          }
+          accessibilityState={{ selected: paused }}
+          hitSlop={12}
+        >
+          {/* Children as a function — never style as a function: NativeWind's
+              jsx runtime drops a function style on a device without a word. */}
+          {({ pressed }) => (
+            <View style={{ width: PAUSE_SIZE, height: PAUSE_SIZE }}>
+              {/* The hard offset shadow as its own layer: React Native clips
+                  box-shadow to the content box, so an offset shadow needs a
+                  sibling it can slide independently of. */}
+              <View
+                className="absolute inset-x-0 rounded-full bg-accent-shadow"
+                style={{
+                  top: pressed ? SHADOW_PRESS : SHADOW_REST,
+                  bottom: pressed ? -SHADOW_PRESS : -SHADOW_REST,
+                }}
+              />
+              <View
+                className="h-full w-full items-center justify-center rounded-full bg-accent"
+                style={{
+                  transform: [{ translateY: pressed ? PRESS_TRAVEL : 0 }],
+                }}
+              >
+                {paused ? (
+                  <PlayIcon size={30} color={colors.text.DEFAULT} />
+                ) : (
+                  <PauseIcon size={30} color={colors.text.DEFAULT} />
+                )}
+              </View>
+            </View>
+          )}
+        </Pressable>
+      </View>
+
+      <View className="items-center gap-3">
+        <Text className="max-w-[290px] text-center text-caption font-sans text-text-muted">
+          Demo mode — the microphone comes later. Only the clock is real.
+        </Text>
+
+        {/* Without this the only way on is to sit out the whole speaking time,
+            which makes the rest of the round untestable. */}
+        <Pressable
+          onPress={handOffToQuestions}
+          accessibilityRole="button"
+          accessibilityLabel="Skip the speaking time and go to the questions"
+          hitSlop={12}
+          className="py-1"
+        >
+          <Text className="text-body font-sans-bold text-text-secondary">
+            Skip to the questions
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

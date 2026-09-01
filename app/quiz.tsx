@@ -147,11 +147,15 @@ export default function Quiz() {
 
     leave(() => {
       if (index === questions.length - 1) {
-        // The round leaves the way a question does — it is gone before the
-        // result screen replaces it. replace, not push: an answered round is
-        // not somewhere to come back to.
+        // The round leaves the way a question does — it is gone before what
+        // comes next replaces it. replace, not push: an answered round is not
+        // somewhere to come back to.
+        //
+        // Into the analysis rather than straight to the result: the score is
+        // already decided here, and `analyzing` only holds it for a moment
+        // before handing these same params on.
         router.replace({
-          pathname: "/quiz-result",
+          pathname: "/analyzing",
           params: {
             topicId,
             title,
