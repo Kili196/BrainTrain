@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { QuestionReviewSheet } from "../components/game/QuestionReviewSheet";
+import { ChevronRightIcon } from "../components/icons/ChevronRightIcon";
 import { BobbingDots } from "../components/ui/BobbingDots";
 import { Button } from "../components/ui/Button";
 import { formatDuration } from "../lib/game-settings";
@@ -201,13 +202,15 @@ export default function QuizResult() {
                 accessibilityLabel={`Question ${index + 1}, ${
                   mark === "1" ? "correct" : "wrong"
                 }. Open it.`}
-                // No className on this one. NativeWind compiles className into
-                // a style and hands React Native `[classStyle, style]` — and an
-                // array cannot hold a function, so a `style={({pressed}) => …}`
-                // sitting next to a className is dropped without a word. That
-                // is what left the chips as bare numbers. Everything the chip
-                // needs lives in the function instead.
-                style={({ pressed }) => ({
+                // A plain object, never `style={({ pressed }) => …}`. Babel
+                // routes every element through NativeWind's jsx runtime
+                // (`jsxImportSource: "nativewind"` in babel.config.js), and a
+                // function style does not survive that on a device: it is
+                // dropped without a word and the chip renders as a bare number.
+                // Web keeps it, which is why this looked right in the browser
+                // for two days. Press feedback comes from `active:` instead.
+                className="active:opacity-70"
+                style={{
                   width: CHIP_WIDTH,
                   height: CHIP_HEIGHT,
                   borderRadius: CHIP_RADIUS,
@@ -215,8 +218,7 @@ export default function QuizResult() {
                   justifyContent: "center",
                   backgroundColor:
                     mark === "1" ? colors.result.right : colors.result.wrong,
-                  opacity: pressed ? 0.7 : 1,
-                })}
+                }}
               >
                 <Text
                   className="text-h4 font-sans-extrabold text-text"
@@ -264,7 +266,7 @@ export default function QuizResult() {
                 read as the finished one. */}
             <Text className="text-caption font-sans text-text-muted">
               From the questions for now — AI review of your talk is coming
-              soon.
+              soon. Tap one to read it in full.
             </Text>
           </View>
 
@@ -282,18 +284,42 @@ export default function QuizResult() {
               </Text>
             ) : null
           ) : (
-            wrong.map((index) => (
-              <View key={index} className="flex-row gap-2.5">
-                <View
-                  className="mt-1.5 h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: colors.result.wrong }}
-                />
-                <Text className="flex-1 text-body font-sans text-text-strong">
-                  {questions[index]?.explanation ??
-                    "No explanation was stored for this question."}
-                </Text>
-              </View>
-            ))
+            // Divider rows rather than free-floating bullets, per design §5:
+            // a hairline and a trailing chevron are how every other list in the
+            // app says a row leads somewhere. As loose paragraphs these read as
+            // copy, and nobody thought to press them.
+            //
+            // The row opens the same sheet the chip above does. Two lines are
+            // enough to recognise which question this was; they are not enough
+            // to finish the sentence, so the row has to be the way to the rest
+            // of it. The brief asks for two to three sentences per explanation
+            // (median 203 characters) — right for reading one, and about a
+            // thousand characters on the screen for a round lost 0/5, which is
+            // what the clamp is for.
+            <View className="-mt-1">
+              {wrong.map((index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => setOpenIndex(index)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Question ${index + 1}, read the whole explanation`}
+                  className="flex-row items-center gap-2.5 border-t border-divider py-3.5 active:opacity-60"
+                >
+                  <View
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: colors.result.wrong }}
+                  />
+                  <Text
+                    className="flex-1 text-body font-sans text-text-strong"
+                    numberOfLines={2}
+                  >
+                    {questions[index]?.explanation ??
+                      "No explanation was stored for this question."}
+                  </Text>
+                  <ChevronRightIcon size={16} color={colors.text.muted} />
+                </Pressable>
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>
