@@ -96,11 +96,12 @@ export function RulesPanel() {
         accessibilityLabel="Rules"
         accessibilityState={{ expanded: open }}
         hitSlop={12}
-        // No className here: NativeWind compiles className into a style and
-        // hands React Native `[classStyle, style]`, and an array cannot hold a
-        // function — a `style={({pressed}) => …}` next to a className is
-        // dropped silently. So the pill is drawn entirely in the function.
-        style={({ pressed }) => ({
+        // A plain object, never a function. Babel routes every element through
+        // NativeWind's jsx runtime, and a function style is dropped there on a
+        // device — the pill loses its rim and its padding and reads as a bare
+        // word. Press feedback comes from `active:` instead.
+        className="active:opacity-70"
+        style={{
           flexDirection: "row",
           alignItems: "center",
           alignSelf: "center",
@@ -112,8 +113,7 @@ export function RulesPanel() {
           // Brighter rim while open, so the pill carries the state as well as
           // the chevron does.
           borderColor: open ? colors.border.control : colors.border.modal,
-          opacity: pressed ? 0.7 : 1,
-        })}
+        }}
       >
         <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text">
           Rules
