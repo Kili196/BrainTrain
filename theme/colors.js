@@ -24,14 +24,20 @@ const colors = {
   track: "rgba(255,255,255,0.10)",
 
   // accent — the one hue; actions & active states only. Base = accent.DEFAULT.
+  //
+  // Saturation raised across the palette on 2026-09-01: the original values were
+  // read off a monitor running high saturation, and on a phone the same navy
+  // came out grey-blue. Every hue and every role is unchanged — each colour was
+  // pulled 45% of the way to full saturation, the blues lifted slightly in
+  // lightness so they read brighter rather than merely deeper.
   accent: {
-    DEFAULT: "#2c5382",
-    shadow: "#1e3d63",
-    light: "#6f9fe0",
-    raised: "#36679c",
+    DEFAULT: "#1b5ba7",
+    shadow: "#113e75",
+    light: "#6aa3ef",
+    raised: "#2170c6",
     // the fill of a selected answer card (design §5). 20% of the accent, so the
     // card lifts without becoming a second primary button.
-    wash: "rgba(44,83,130,0.20)",
+    wash: "rgba(27,91,167,0.20)",
   },
 
   // text
@@ -63,7 +69,7 @@ const colors = {
     modal: "rgba(255,255,255,0.12)",
     // the rim of a selected answer card (design §5), and the ring of an
     // unchecked answer control (design §6).
-    selected: "rgba(111,159,224,0.45)",
+    selected: "rgba(106,163,239,0.45)",
     control: "rgba(255,255,255,0.20)",
   },
 
@@ -87,8 +93,8 @@ const colors = {
   // way the streak scale is — these belong to that screen and must not be
   // borrowed for any other "good"/"bad" state.
   //
-  // Deliberately saturated where every status colour is muted: this is the one
-  // loud moment in the app, and it lasts as long as one screen.
+  // The loudest pair in the app, and the only place green appears: these two
+  // sit at full saturation where even the brightened status colours hold back.
   result: {
     right: "#22e06a",
     wrong: "#ff3b30",
@@ -99,9 +105,16 @@ const colors = {
   },
 
   // status
-  error: "#c46a6a",
-  danger: "#ff3b30",
-  warning: "#a4823e",
+  error: "#df4f4f",
+  danger: {
+    DEFAULT: "#ff3b30",
+    // 12% of the same red, behind the REC pill while recording. Design §14:
+    // a new state gets an opacity variant of an existing colour, never a new
+    // hue. Deliberately its own token rather than borrowing
+    // `result.wrong-wash`, which is the same value scoped to one screen.
+    wash: "rgba(255,59,48,0.12)",
+  },
+  warning: "#d59922",
 };
 
 module.exports = { colors };

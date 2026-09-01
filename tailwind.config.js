@@ -76,9 +76,11 @@ module.exports = {
       },
       // the one signature effect: hard offset button shadow, no blur.
       // RN 0.86 renders box-shadow natively on both platforms.
+      // Built from the token rather than written out, so the shadow cannot
+      // drift away from the accent it is supposed to be the dark side of.
       boxShadow: {
-        btn: "0 6px 0 0 #1e3d63",
-        "btn-pressed": "0 2px 0 0 #1e3d63",
+        btn: `0 6px 0 0 ${colors.accent.shadow}`,
+        "btn-pressed": `0 2px 0 0 ${colors.accent.shadow}`,
       },
     },
   },

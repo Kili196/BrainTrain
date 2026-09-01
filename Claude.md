@@ -82,9 +82,17 @@ Reference files: `Home Screen.dc.html`, `Play Screen.dc.html`, `Recording Screen
 
 ## 1. Colors
 
-The palette is a near-black dark theme with exactly one hue (a desaturated navy blue)
+The palette is a near-black dark theme with exactly one hue (a saturated navy blue)
 carrying all interaction. There are no gradients as surface decoration — the only
 gradient-like effects are radial SVG halos in the Knowledge net and the Analyzing orbit.
+
+**Saturation, raised 2026-09-01.** The values below are one generation on from the
+mockups. The originals were judged on a monitor running high saturation and came out
+grey-blue on a phone, so every chromatic token was pulled 45% of the way to full
+saturation, with the blues lifted a little in lightness so they read brighter rather
+than merely deeper. Hues and roles are unchanged. **The phone is the reference for
+colour, never the desktop preview** — and the source of truth for these values is
+`theme/colors.js`, not this table.
 
 ### Backgrounds & surfaces
 
@@ -102,12 +110,12 @@ gradient-like effects are radial SVG halos in the Knowledge net and the Analyzin
 
 | Token | Value | RGB | Usage |
 |---|---|---|---|
-| `accent` | `#2c5382` | 44,83,130 | THE primary. Every primary button, active tab, active pill, filled progress, selected avatar, unlocked badge. |
-| `accent-shadow` | `#1e3d63` | 30,61,99 | Hard offset shadow under every primary button. Never used as a fill. |
-| `accent-light` | `#6f9fe0` | 111,159,224 | Text-level accent: score rings, metric bars, radio dots, confirm-button labels, secondary links, current progress segment. |
-| `accent-raised` | `#36679c` | 54,103,156 | Only the Home PLAY button (one step brighter to make it the loudest element in the app). |
-| `accent-wash` | `rgba(44,83,130,0.20)` | — | Selected answer card fill. |
-| `accent-glow` | `rgba(111,159,224,0.22)` | — | Mic pulse halo. |
+| `accent` | `#1b5ba7` | 27,91,167 | THE primary. Every primary button, active tab, active pill, filled progress, selected avatar, unlocked badge. |
+| `accent-shadow` | `#113e75` | 17,62,117 | Hard offset shadow under every primary button. Never used as a fill. |
+| `accent-light` | `#6aa3ef` | 106,163,239 | Text-level accent: score rings, metric bars, radio dots, confirm-button labels, secondary links, current progress segment. |
+| `accent-raised` | `#2170c6` | 33,112,198 | Only the Home PLAY button (one step brighter to make it the loudest element in the app). |
+| `accent-wash` | `rgba(27,91,167,0.20)` | — | Selected answer card fill. |
+| `accent-glow` | `rgba(106,163,239,0.22)` | — | Mic pulse halo. |
 
 ### Text
 
@@ -137,17 +145,18 @@ gradient-like effects are radial SVG halos in the Knowledge net and the Analyzin
 
 | Token | Value | Usage |
 |---|---|---|
-| `error` / `wrong` | `#c46a6a` (fill), `#e08a8a` (text) | WRONG badge, low-time timer, destructive text. |
+| `error` / `wrong` | `#df4f4f` (fill), `#ee7c7c` (text) | WRONG badge, low-time timer, destructive text. |
 | `danger` | `#ff3b30` | „Delete account", recording indicator, notification dot. |
-| `warning` / `imprecise` | `#a4823e` | IMPRECISE badge. |
+| `danger-wash` | `rgba(255,59,48,0.12)` | Behind the REC pill while recording, and nothing else. |
+| `warning` / `imprecise` | `#d59922` | IMPRECISE badge. |
 | `neutral` / `unsourced` | `#8a8a8a` | UNSOURCED badge. |
-| `success` | `#6f9fe0` | Positive states (high scores, correct answers, mastered nodes) are shown in `accent-light`. |
-| `result` | `#22e06a` (right), `#ff3b30` (wrong), 12% washes of each | Right and wrong on the quiz result screen, and nowhere else — the question chips, the reviewed answer rows, the review bullets. The Questions Result mockup draws green and red chips, which is why the no-green rule below carries this exception. Deliberately saturated where the status colours are muted. |
+| `success` | `#6aa3ef` | Positive states (high scores, correct answers, mastered nodes) are shown in `accent-light`. |
+| `result` | `#22e06a` (right), `#ff3b30` (wrong), 12% washes of each | Right and wrong on the quiz result screen, and nowhere else — the question chips, the reviewed answer rows, the review bullets. The Questions Result mockup draws green and red chips, which is why the no-green rule below carries this exception. The loudest pair in the app: full saturation, where even the brightened status colours hold back. |
 | `streak` | `rgba(255,110,20,…)` orange, `rgba(150,80,255,…)` violett ab 30 Tagen, grau wenn 0 | Streak flame only. |
 
 ### Podium (Leaderboard, exclusive)
 
-`1 → #8b6bd8`, `2 → #2c5382`, `3 → #c9691f`. These three colors appear nowhere else.
+`1 → #8459ea`, `2 → #1b5ba7`, `3 → #d76711`. These three colors appear nowhere else.
 
 ---
 
@@ -222,18 +231,18 @@ soft/blurred shadow.
 ### Primary
 
 ```
-background:      #2c5382
+background:      #1b5ba7
 color:           #ffffff
 padding:         16–20px (full-width) · 16px 28px (auto-width)
 border:          none
 border-radius:   14px (compact) · 16px (full-width, tall)
 font:            13–15px / 800 / letter-spacing 0.12em / UPPERCASE
-box-shadow:      0 6px 0 0 #1e3d63   (0 7px for 18–20px tall buttons)
+box-shadow:      0 6px 0 0 #113e75   (0 7px for 18–20px tall buttons)
 transition:      transform 90ms ease, box-shadow 90ms ease, filter 150ms ease
 ```
 
 * **Hover:** `filter: brightness(1.08)`
-* **Active:** `transform: translateY(4px); box-shadow: 0 2px 0 0 #1e3d63` (5px/2px for the 7px variant)
+* **Active:** `transform: translateY(4px); box-shadow: 0 2px 0 0 #113e75` (5px/2px for the 7px variant)
 * **Disabled:** `opacity: 0.35; pointer-events: none; cursor: default` (Onboarding CTA), or `background: rgba(255,255,255,0.06); color: #5f5f5f; box-shadow: none` (Questions CTA)
 * **Focus:** Not determined from existing design — no explicit focus ring is defined.
 
@@ -243,9 +252,9 @@ Width: full-width inside content padding for the main action of a screen; auto-w
 ### Hero (Home PLAY only)
 
 ```
-background:    #36679c
-box-shadow:    0 7px 0 0 #1e3d63,
-               0 22px 40px -18px rgba(54,103,156,0.85),
+background:    #2170c6
+box-shadow:    0 7px 0 0 #113e75,
+               0 22px 40px -18px rgba(33,112,198,0.85),
                inset 0 1px 0 rgba(255,255,255,0.28)
 font:          20px / 800 / letter-spacing 0.14em
 ```
@@ -259,7 +268,7 @@ and Play (START).
 padding:        8–10px 15px
 border-radius:  999px
 border:         1px solid rgba(255,255,255,0.12)   (transparent when active)
-background:     transparent → #2c5382 when active
+background:     transparent → #1b5ba7 when active
 color:          #8a8a8a → #ffffff when active
 font:           9.5px / 800 / letter-spacing 0.16em
 transition:     background 150ms ease, color 150ms ease
@@ -271,7 +280,7 @@ Used for ALL TIME/DAILY, mode selection, segmented controls. No shadow.
 ```
 background: none; border: none; padding: 0;
 font:  11.5–13px / 700
-color: #9a9a9a  (or #6f9fe0 for affirmative links)
+color: #9a9a9a  (or #6aa3ef for affirmative links)
 hover: color → #ffffff
 ```
 Used for „I'm ready", „EDIT PROFILE", „+ Add second page", dialog „Cancel".
@@ -312,7 +321,7 @@ box-shadow:     none
 
 * Internal structure: eyebrow → 8–10px → title → 14–22px → content.
 * **Hover:** cards that are links get `background: rgba(255,255,255,0.04)` on the row, no lift, no shadow.
-* **Selected:** `background: rgba(44,83,130,0.20)`, border → `rgba(111,159,224,0.45)`.
+* **Selected:** `background: rgba(27,91,167,0.20)`, border → `rgba(106,163,239,0.45)`.
 * Many "cards" are actually **divider rows**: no fill, no radius, just
   `border-top: 1px solid rgba(255,255,255,0.08)` and generous padding. Prefer this for
   long lists (sessions, issues, settings, categories); reserve filled cards for a single
@@ -355,8 +364,8 @@ input:   transparent, no border, no outline, 13px, #ffffff
 ### Radio (answer cards)
 
 Full-width card as the hit area, radio dot on the right:
-outer `22px` circle, `1.5px solid rgba(255,255,255,0.20)` → `#6f9fe0` when on;
-inner `10px` dot, transparent → `#6f9fe0`. Transition `160ms ease`.
+outer `22px` circle, `1.5px solid rgba(255,255,255,0.20)` → `#6aa3ef` when on;
+inner `10px` dot, transparent → `#6aa3ef`. Transition `160ms ease`.
 
 ### Checkbox (multi-select list)
 
@@ -365,7 +374,7 @@ when checked `background #ffffff` with `box-shadow: inset 0 0 0 3.5px #141414`.
 
 ### Switch
 
-`track 44 × 26px, border-radius 999px, background rgba(255,255,255,0.12) → #2c5382`;
+`track 44 × 26px, border-radius 999px, background rgba(255,255,255,0.12) → #1b5ba7`;
 `knob 20 × 20px white, top 3px, left 3px → 21px`, transition
 `left 180ms cubic-bezier(.3,.8,.3,1)`.
 
@@ -409,8 +418,8 @@ Only three shadow uses exist. Blurred shadows are reserved for things that float
 
 | Level | Value | Used by |
 |---|---|---|
-| Buttons (not elevation — physical) | `0 6px 0 0 #1e3d63` / `0 7px 0 0 #1e3d63`, pressed `0 2px 0 0 #1e3d63` | Primary buttons |
-| Hero glow | `0 22px 40px -18px rgba(54,103,156,0.85)` + `inset 0 1px 0 rgba(255,255,255,0.28)` | Home PLAY only |
+| Buttons (not elevation — physical) | `0 6px 0 0 #113e75` / `0 7px 0 0 #113e75`, pressed `0 2px 0 0 #113e75` | Primary buttons |
+| Hero glow | `0 22px 40px -18px rgba(33,112,198,0.85)` + `inset 0 1px 0 rgba(255,255,255,0.28)` | Home PLAY only |
 | Overlay | `0 24px 60px -20px rgba(0,0,0,0.9)` | Modals, sheets, popovers |
 
 **Cards cast no shadow.** Elevation hierarchy: page (`#0b0b0b`) → card
@@ -469,7 +478,7 @@ Desktop/tablet behaviour: **Not determined from existing design.**
 ### Bottom tab bar
 5 equal columns (Profile · Ranking · Home · Knowledge · Settings), each a transparent
 button with `padding: 4px 0`, an 18px icon area and a 9.5px/600 label, gap ~5px.
-Active `#2c5382`, inactive `rgba(255,255,255,0.30)`. Sits on the page background with a
+Active `#1b5ba7`, inactive `rgba(255,255,255,0.30)`. Sits on the page background with a
 `border-top: 1px solid rgba(255,255,255,0.08)`.
 
 ### Modal / dialog
@@ -486,7 +495,7 @@ animation: popIn 170–180ms cubic-bezier(.3,.8,.3,1)
 Structure: title `padding 20–22px 22px 6px`, 16–17px/800 white → body
 `padding 0 22px 20px`, 12.5px/1.55 `#8a8a8a` → footer as a flex row of two text buttons
 divided by `border-top` and a vertical `border-right`, each `padding: 15px`.
-Cancel is `#9a9a9a`, confirm is `#6f9fe0` (or `#ff3b30` when destructive). **No close X.**
+Cancel is `#9a9a9a`, confirm is `#6aa3ef` (or `#ff3b30` when destructive). **No close X.**
 
 ### Bottom sheet / popover
 Same surface as the modal, but `left: 26px; right: 26px` (full width minus margin) and
@@ -498,12 +507,12 @@ dialogs). Clicking it closes the overlay.
 
 ### Progress bar
 `height: 3px` (thin/segmented) or `6px` (metrics), `border-radius: 3–6px`,
-track `rgba(255,255,255,0.09–0.12)`, fill `#2c5382` or `#6f9fe0`,
+track `rgba(255,255,255,0.09–0.12)`, fill `#1b5ba7` or `#6aa3ef`,
 `transition: width 1s linear` for timers.
 
 ### Progress ring
 SVG circle, `stroke-width: 3` (timer, XP) or `8` (score), track
-`rgba(255,255,255,0.09)`, fill `#6f9fe0` / `#2c5382`, `stroke-linecap: round`,
+`rgba(255,255,255,0.09)`, fill `#6aa3ef` / `#1b5ba7`, `stroke-linecap: round`,
 `transform: rotate(-90 cx cy)`. Sizes: 118px score, 140px avatar, 230px timer.
 
 ### Chip / pill
@@ -536,10 +545,10 @@ Screens that navigate away fade **in** to black (`veilIn 300ms`) and navigate af
 * **Near-black canvas with translucent white surfaces.** Nothing is a lighter grey box;
   containers are 4–5% white overlays with a 9% hairline. That makes the UI read as one
   continuous dark field rather than a stack of panels — calm, premium, low-noise.
-* **One hue, used sparingly.** A single desaturated navy carries every action. Because
+* **One hue, used sparingly.** A single saturated navy carries every action. Because
   nothing else is coloured, the eye goes straight to the one thing that is. Status colours
-  are muted (dusty red, ochre) rather than alarm-bright, so corrections feel like feedback,
-  not failure.
+  are clear rather than alarm-bright — a warm red and an amber, loud enough to be seen on
+  a phone, restrained enough that a correction still feels like feedback, not failure.
 * **Typography does the shouting.** Weight 800, tight tracking on headlines and very wide
   tracking on tiny uppercase eyebrows creates strong hierarchy without rules, boxes or
   colour. Uppercase micro-labels give it a technical, instrument-panel feel.
@@ -548,8 +557,9 @@ Screens that navigate away fade **in** to black (`veilIn 300ms`) and navigate af
   dashboard. Everything around it stays flat, which is what keeps that detail from
   reading as cheap.
 * **Motion is short and functional.** 90–260ms for state, 170–180ms pop for overlays,
-  240–300ms veils between screens. Only three things loop: the streak flame, the PLAY
-  shimmer, and the analysis orbit — each marks something alive.
+  240–300ms veils between screens. Only four things loop: the streak flame, the PLAY
+  shimmer, the analysis orbit, and the waveform on the recording screen — each marks
+  something alive, and nothing else in the app is allowed to.
 * **Generous, not sparse.** Big type, wide margins, one idea per band. Lists tighten up
   because they are scanned; everything else breathes.
 
@@ -557,14 +567,14 @@ Screens that navigate away fade **in** to black (`veilIn 300ms`) and navigate af
 
 ## 14. Design rules
 
-- Use `#2c5382` **only** for the single primary action, active states and filled progress. Never as a background or decorative fill.
+- Use `#1b5ba7` **only** for the single primary action, active states and filled progress. Never as a background or decorative fill.
 - **One primary button per screen**, at the bottom. Everything else is pill, ghost or icon.
-- Never replace the button's hard `0 6px 0 0 #1e3d63` shadow with a blurred one, and never remove the press-down (`translateY(4–5px)` + `0 2px 0 0`).
+- Never replace the button's hard `0 6px 0 0 #113e75` shadow with a blurred one, and never remove the press-down (`translateY(4–5px)` + `0 2px 0 0`).
 - Cards are flat: translucent white fill + 1px hairline. **No shadows on cards, ever.** Blur is reserved for floating overlays.
 - Prefer a divider row (`border-top: 1px solid rgba(255,255,255,0.08)`) over a filled card for lists. At most one filled feature card per screen.
 - Every section starts with an eyebrow: 9.5–10px / 800 / `letter-spacing: 0.2em` / UPPERCASE / `#5f5f5f`.
 - All numbers use `font-variant-numeric: tabular-nums`.
-- **No green**, with exactly one exception: the quiz result screen, where right and wrong are `result.right` / `result.wrong` (its own mockup draws them that way). Every other positive or successful state uses `#6f9fe0`. Like the streak scale, those two belong to that screen and must not be borrowed.
+- **No green**, with exactly one exception: the quiz result screen, where right and wrong are `result.right` / `result.wrong` (its own mockup draws them that way). Every other positive or successful state uses `#6aa3ef`. Like the streak scale, those two belong to that screen and must not be borrowed.
 - No emoji except country flags in leaderboard and profile.
 - Do not introduce a new hue. If a new state needs a colour, use an opacity variant of an existing one.
 - Icons are hand-written 24-viewBox stroke SVGs at `stroke-width: 1.7–2` in `currentColor`. Do not add an icon library and do not mix filled and stroked icons in one row.
@@ -586,10 +596,10 @@ surface         #141414
 card            rgba(255,255,255,0.045)
 card-hover      rgba(255,255,255,0.04)
 chip            rgba(255,255,255,0.08)
-accent          #2c5382
-accent-shadow   #1e3d63
-accent-light    #6f9fe0
-accent-raised   #36679c   (Home PLAY only)
+accent          #1b5ba7
+accent-shadow   #113e75
+accent-light    #6aa3ef
+accent-raised   #2170c6   (Home PLAY only)
 text            #ffffff
 text-secondary  #8a8a8a
 text-muted      #6a6a6a
@@ -599,10 +609,10 @@ border          rgba(255,255,255,0.09)
 divider         rgba(255,255,255,0.08)
 border-modal    rgba(255,255,255,0.12)
 scrim           rgba(0,0,0,0.6)
-error           #c46a6a / text #e08a8a
+error           #df4f4f / text #ee7c7c
 danger          #ff3b30
-warning         #a4823e
-success         #6f9fe0   (green only in result.right, see §1)
+warning         #d59922
+success         #6aa3ef   (green only in result.right, see §1)
 result.right    #22e06a   (quiz result screen only)
 result.wrong    #ff3b30   (quiz result screen only)
 
@@ -628,8 +638,8 @@ RADIUS
 xs 3px · sm 12px · md 14px · lg 16px · xl 18px · 2xl 22px · pill 999px · frame 38px
 
 SHADOWS
-button       0 6px 0 0 #1e3d63   (pressed: 0 2px 0 0 #1e3d63)
-button-tall  0 7px 0 0 #1e3d63
+button       0 6px 0 0 #113e75   (pressed: 0 2px 0 0 #113e75)
+button-tall  0 7px 0 0 #113e75
 overlay      0 24px 60px -20px rgba(0,0,0,0.9)
 card         none
 
