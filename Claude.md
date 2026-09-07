@@ -6,43 +6,120 @@ Guidance for Claude Code in this repo. Keep it short — add a rule here only on
 
 A cross-platform mobile app for **iOS and Android**, built with **React Native + Expo** in **TypeScript**.
 
-- **App name:** _(fill in)_
-- **What it does:** _(one line — fill in)_
+- **App name:** BrainTrain
+- **What it does:** A speaking-and-knowledge trainer — you draw a topic, get prep time, record yourself speaking about it, then answer a 5-question quiz; the app analyses and scores the round.
 
 ## Stack (confirmed)
 
-- **Expo** (managed workflow) + **React Native** + **TypeScript** (`strict` on).
-- **Supabase** for database, auth, and file storage.
+These were open questions; the code has since settled them. Match what's here — don't
+swap one out without agreeing first.
 
-Not decided yet — **ask before choosing**: navigation, data-fetching/query layer, state management, styling approach, testing setup, folder structure. Don't introduce these on your own.
+- **Expo** (managed workflow) + **React Native** + **TypeScript** (`strict` on).
+- **Supabase** for database, auth, and file storage. One shared client in `lib/supabase.ts`.
+- **Navigation:** **expo-router** (file-based). Routes live in `app/`; each folder is a
+  route group with its own `_layout.tsx`. No React Navigation config by hand.
+- **Styling:** **NativeWind v4** (Tailwind classes). Design tokens live in `theme/colors.js`
+  and `tailwind.config.js` — reference them as classes (`bg-bg`, `text-text-secondary`,
+  `rounded-lg`, `font-sans-extrabold`). **Never hardcode a hex value** in a component; add
+  it to `theme/colors.js`. When you need a token inside a `style` object, import `colors`
+  from `theme/colors.js` (same source the Tailwind config reads).
+- **State management:** **React Context**, one file per concern in `lib/*-context.tsx`
+  (`onboarding-context`, `round-start-context`, `toast-context`). Providers are mounted in
+  the relevant `_layout.tsx`. No Redux/Zustand.
+- **Data-fetching:** direct `supabase-js` calls wrapped in typed helpers in `lib/`
+  (`fetchTopics`, `fetchTopicBySlug`, `fetchQuizQuestions`). No query library — don't add
+  React Query etc. without agreeing first.
+- **Fonts:** Archivo, loaded per-weight in `app/_layout.tsx`; each weight is its own family
+  (`font-sans`, `font-sans-extrabold`, …) because RN doesn't synthesise weight.
+
+Still open — **ask before choosing**: testing setup.
 
 ## Getting started
 
-_(fill in — prerequisites, how to install deps, env vars needed, how to run the app on a simulator/device.)_
+Full setup (prerequisites, env vars, Supabase access, running on a device/simulator) lives
+in **`README.md`** — follow it there rather than duplicating it here. Short version:
+`npm install`, copy `.env.example` to `.env` and fill in the two `EXPO_PUBLIC_SUPABASE_*`
+values, then `npm start`. After any `.env` change, restart Metro with `npx expo start -c`
+(the `EXPO_PUBLIC_*` values are inlined at build time).
 
 ## Commands
 
-_(fill in once scripts exist in `package.json` — e.g. start, lint, typecheck, test, build. Always use these instead of raw commands.)_
+Always use these scripts rather than raw commands.
+
+| Command | Does |
+|---|---|
+| `npm start` | Metro + QR code (press `i` / `a`, or scan with Expo Go) |
+| `npm run ios` / `npm run android` / `npm run web` | Straight into that target |
+| `npm run db:push` | Apply `supabase/migrations/` to the linked project |
+| `npm run db:types` | Regenerate `lib/database.types.ts` from the live schema |
+| `npm run db:seed` / `npm run db:seed:questions` | Compile content markdown/JSON into a seed migration |
+
+No lint/typecheck/test scripts exist yet. TypeScript is `strict` — rely on the editor /
+`npx tsc --noEmit`.
 
 ## Project structure
 
-_(fill in once decided — the folder layout and what goes where. Until then, ask before inventing structure.)_
+```
+app/            expo-router routes (file = screen). Groups: (onboarding), (tabs);
+                standalone screens: play, recording, quiz, quiz-intro, quiz-result,
+                analyzing. Each group has a _layout.tsx; the root _layout.tsx wraps every route.
+components/     ui/          reusable primitives (Button, Dialog, Sheet, TextField, TabBar…)
+                game/        round/gameplay pieces (StageTopic, RulesPanel, Waveform…)
+                onboarding/  onboarding-flow pieces
+                icons/       hand-written SVG icon components (see Design System §9)
+constants/      static data (categories, countries, placeholders)
+lib/            Supabase client, typed data helpers, contexts, hooks (use-*), storage
+theme/          colors.js — the single colour source of truth (JS so both TS and Tailwind read it)
+supabase/       migrations/  timestamped SQL, applied in order
+                content/     source markdown/JSON + generators for seed migrations
+```
+
+Put new files where their neighbours already live. Ask before inventing a new top-level folder.
 
 ## Data model
 
-_(fill in — Supabase tables, key relationships, and where the schema/migrations live.)_
+Schema and RLS live in `supabase/migrations/` (timestamped SQL, source of truth); types are
+generated into `lib/database.types.ts` (`npm run db:types`) — never edit that by hand. Tables:
+
+- **`topics`** — content, read-only to clients. `slug` is the stable key the app uses;
+  `status` gates publishing (RLS only exposes `published`).
+- **`quiz_questions`** — belongs to a topic; `options` (jsonb array), `correct_index`,
+  optional `explanation`, `sort_order`.
+- **`profiles`** — 1:1 with `auth.users` (shared PK), created by a signup trigger.
+- **`speech_sessions`** — strictly private per user (RLS on `user_id`); audio stays on the
+  device, only metadata is stored. `client_id` makes upload idempotent.
+
+Content is maintained through the `service_role` key (which bypasses RLS), not from the app.
+Edit the markdown/JSON in `supabase/content/` and regenerate the seed migration — **never
+hand-patch generated SQL**.
 
 ## Coding conventions
 
-_(fill in as patterns emerge — naming, file organization, component/hook patterns. For now: match existing code.)_
+Match the existing code. The patterns already in use:
+
+- **Files:** `PascalCase.tsx` for components; `kebab-case.ts(x)` for `lib/` (contexts, hooks,
+  helpers). Hooks are `use-*.ts`. Route files under `app/` follow expo-router naming.
+- **Exports:** components and helpers are **named exports** (`export function Button`).
+  The exception is expo-router route/layout files, which must `export default`.
+- **Props:** an exported `type XProps = { … }` above the component; no inline prop types.
+- **Context pattern:** a `XProvider` plus a `useX()` hook that throws if called outside its
+  provider — copy `lib/onboarding-context.tsx`.
+- **Comments explain *why*, not *what*.** This codebase leans on generous "why" comments for
+  any non-obvious mobile/Expo decision (see `Button.tsx`, `supabase.ts`). Keep that up.
+- **Styling:** NativeWind `className` for layout/colour; drop to a `style` object only for
+  what Tailwind can't express (animated transforms, measured values). Colours always come
+  from tokens — class or imported `colors`, never a literal hex.
+- **No `any` / no `as` to silence the compiler** — fix the type instead.
 
 ## Testing
 
-_(fill in once a test setup is chosen — framework, how to run, what to cover before "done".)_
+No test framework is set up yet — **ask before adding one**. Until then, "done" means it
+typechecks and you've exercised the change on a device/simulator (both platforms for
+anything touching layout, gestures, keyboard, or permissions).
 
 ## Deployment
 
-_(fill in — EAS build/submit profiles and the release process for App Store + Google Play.)_
+Not set up yet (no EAS config). Ask before adding build/submit profiles or a release process.
 
 ## Ground rules
 
