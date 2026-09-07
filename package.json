@@ -35,6 +35,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > lib/database.types.ts",
     "db:seed": "node supabase/content/gen-topics.js supabase/content/topics-v1.md supabase/migrations/20260826140100_seed_topics_v1_en.sql",

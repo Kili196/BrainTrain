@@ -78,7 +78,7 @@ export function SheetSurface({
           style={{
             marginHorizontal: 26,
             marginBottom: insets.bottom + 30,
-            boxShadow: "0 24px 60px -20px rgba(0,0,0,0.9)",
+            boxShadow: colors.shadowOverlay,
           }}
         >
           {children}

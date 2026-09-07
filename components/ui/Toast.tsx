@@ -96,7 +96,7 @@ export function Toast({
     >
       <View
         className="flex-row items-center gap-3 rounded-xl border border-modal bg-surface px-4 py-3.5"
-        style={{ boxShadow: "0 24px 60px -20px rgba(0,0,0,0.9)" }}
+        style={{ boxShadow: colors.shadowOverlay }}
       >
         <CheckIcon size={15} color={colors.accent.light} />
 

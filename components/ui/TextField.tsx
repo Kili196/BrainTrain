@@ -39,7 +39,7 @@ export function TextField({ variant = "input", ...inputProps }: TextFieldProps) 
       }
       style={{
         borderWidth: 1,
-        borderColor: focused ? colors.accent.DEFAULT : "rgba(255,255,255,0.12)",
+        borderColor: focused ? colors.accent.DEFAULT : colors.border.modal,
       }}
     >
       {isSearch ? <SearchIcon size={16} color={colors.text.muted} /> : null}

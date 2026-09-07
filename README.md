@@ -104,14 +104,20 @@ show the same migrations.
 
 ## Project status
 
-Backend and UI currently sit **side by side, not yet connected**:
+Topics are wired end to end; auth and saving a round are the two pieces still stubbed:
 
 - The schema is migrated, and the topic pool (125 English topics, 25 per category) is
   live and verified through a real `supabase-js` query.
 - `lib/supabase.ts` and `lib/topics.ts` (`fetchTopics`, `fetchTopicBySlug`,
-  `fetchQuizQuestions`) are done and typed from `lib/database.types.ts`.
-- **No screen imports any of it yet.** `app/` and `components/` know nothing about
-  Supabase.
+  `fetchQuizQuestions`, `fetchRandomTopic(s)`, `fetchDailyTopic`) are done and typed
+  from `lib/database.types.ts`, and screens call them directly: `home.tsx` draws
+  topics, `quiz.tsx` and `quiz-result.tsx` fetch the quiz questions for a round.
+- The Supabase client is **anonymous** — there is no sign-in flow yet, so every
+  request runs unauthenticated.
+- Because of that, `speech_sessions` writes are deliberate placeholders: "Save round"
+  on the result screen and the "analyzing" step before it both fake their work
+  (see `FAKE_SAVE_MS` in `app/quiz-result.tsx`) rather than write anything, since RLS
+  keys that table on `auth.uid()` and there is no session to key it to.
 
 So the app starting successfully only proves the app runs — whether the database is
 reachable shows up in step 6 or in the first real query.

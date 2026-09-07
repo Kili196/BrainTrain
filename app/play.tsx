@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -74,9 +74,21 @@ export default function Play() {
   // behind the countdown instead of jumping back to the full duration.
   const [frozenSeconds, setFrozenSeconds] = useState<number | null>(null);
 
+  // The id of the hold-timeout scheduled in beginSpeaking, so it can be
+  // cleared if the screen unmounts during the RING_COMPLETE_MS hold (e.g.
+  // hardware-back at prep-end) — otherwise setCounting would fire after unmount.
+  const holdTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     loadGameSettings().then(setSettings);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (holdTimeout.current) clearTimeout(holdTimeout.current);
+    },
+    []
+  );
 
   // The only way out of preparation — reached by the clock running out or by
   // skipping. Both end at the 3·2·1 countdown.
@@ -89,12 +101,17 @@ export default function Play() {
     setFrozenSeconds(secondsLeft ?? 0);
     setPrepEndsAt(null);
 
+    if (holdTimeout.current) {
+      clearTimeout(holdTimeout.current);
+      holdTimeout.current = null;
+    }
+
     if (holdMs === 0) {
       setCounting(true);
       return;
     }
 
-    setTimeout(() => setCounting(true), holdMs);
+    holdTimeout.current = setTimeout(() => setCounting(true), holdMs);
   };
 
   useEffect(() => {

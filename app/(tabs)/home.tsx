@@ -334,16 +334,19 @@ export default function Home() {
 
           {/* Dev convenience: re-run onboarding without reinstalling. Ghost
               styling on purpose — the screen may only ever have one filled
-              button. */}
-          <Pressable
-            onPress={reset}
-            accessibilityRole="button"
-            className="py-2"
-          >
-            <Text className="text-body font-sans-bold text-text-muted">
-              Reset onboarding
-            </Text>
-          </Pressable>
+              button. Behind __DEV__, like the shortcut below it: this has no
+              business in a build either. */}
+          {__DEV__ ? (
+            <Pressable
+              onPress={reset}
+              accessibilityRole="button"
+              className="py-2"
+            >
+              <Text className="text-body font-sans-bold text-text-muted">
+                Reset onboarding
+              </Text>
+            </Pressable>
+          ) : null}
 
           {/* The result screen otherwise costs a whole round to look at. Behind
               __DEV__, unlike the row above it: that one is a convenience, this

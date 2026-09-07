@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text } from "react-native";
 
+import { colors } from "../../theme/colors";
+
 // 3 · 2 · 1 · LET'S GO, each frame flying past the viewer.
 //
 // Every step is 800ms and there are five of them, so four seconds from the
@@ -112,7 +114,7 @@ export function CountdownOverlay({ running, onFinish }: CountdownOverlayProps) {
           // Not opaque: the ring and the topic stay dimly visible behind the
           // count, so it reads as something happening to this screen rather
           // than as a new one.
-          backgroundColor: "rgba(11,11,11,0.72)",
+          backgroundColor: colors.veil,
         },
       ]}
     >

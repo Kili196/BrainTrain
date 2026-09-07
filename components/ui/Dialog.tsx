@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Modal, Pressable, Text, View } from "react-native";
 
+import { colors } from "../../theme/colors";
+
 // The app's one dialog (design §12): a 300px card in the middle of the screen,
 // a title, a line of body copy, and a footer of exactly two text buttons split
 // by a hairline cross.
@@ -71,7 +73,7 @@ export function Dialog({
         <Pressable
           className="absolute inset-0"
           style={{
-            backgroundColor: destructive ? "rgba(0,0,0,0.68)" : "rgba(0,0,0,0.6)",
+            backgroundColor: destructive ? colors.scrimStrong : colors.scrim,
           }}
           onPress={onCancel}
           accessibilityRole="button"
@@ -100,7 +102,7 @@ export function Dialog({
             className="overflow-hidden rounded-xl border border-modal bg-surface"
             style={{
               width: 300,
-              boxShadow: "0 24px 60px -20px rgba(0,0,0,0.9)",
+              boxShadow: colors.shadowOverlay,
             }}
           >
             <Text className="px-[22px] pb-1.5 pt-5 text-center text-h3 font-sans-extrabold text-text">

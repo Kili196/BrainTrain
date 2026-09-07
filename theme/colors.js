@@ -71,12 +71,23 @@ const colors = {
     // unchecked answer control (design §6).
     selected: "rgba(106,163,239,0.45)",
     control: "rgba(255,255,255,0.20)",
+    // the rim of a selected onboarding country row — same idea as `selected`
+    // above, but white rather than accent-tinted (design §6 "checkbox").
+    selectedSoft: "rgba(255,255,255,0.45)",
   },
 
   // stepper and icon-button fills (design §1 "inactive-fill")
   "inactive-fill": "rgba(255,255,255,0.06)",
   // dims the screen behind a sheet or dialog (design §12)
   scrim: "rgba(0,0,0,0.6)",
+  // the same scrim, darkened further behind a destructive dialog (design §12)
+  scrimStrong: "rgba(0,0,0,0.68)",
+  // dims the round behind the 3·2·1 countdown, so the ring stays dimly visible
+  // rather than being hidden by an opaque layer
+  veil: "rgba(11,11,11,0.72)",
+  // the one blurred shadow in the app, shared by every floating overlay —
+  // modals, sheets, toasts (design §8 "Overlay")
+  shadowOverlay: "0 24px 60px -20px rgba(0,0,0,0.9)",
 
   // the streak flame, and nothing else (design §1). Grey at zero, orange while
   // a streak is running, violet once it passes 30 days — the colour is the

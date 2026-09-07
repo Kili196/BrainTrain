@@ -37,7 +37,7 @@ function CountryRow({
       }
       style={
         selected
-          ? { borderWidth: 1, borderColor: "rgba(255,255,255,0.45)" }
+          ? { borderWidth: 1, borderColor: colors.border.selectedSoft }
           : undefined
       }
     >
