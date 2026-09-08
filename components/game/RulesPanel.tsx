@@ -140,6 +140,14 @@ export function RulesPanel() {
             inputRange: [0, 1],
             outputRange: [0, panelHeight],
           }),
+          // A fixed gap between the pill and the scroll box, kept outside the
+          // ScrollView so it does not scroll away — otherwise scrolled text
+          // clips right against the pill and reads as stuck to it. Animated
+          // alongside the height so a closed panel adds no gap.
+          marginTop: progress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 12],
+          }),
           opacity: progress,
           // What actually hides the rules while the height animates.
           overflow: "hidden",
@@ -153,7 +161,10 @@ export function RulesPanel() {
           style={{ height: panelHeight }}
         >
           <View
-            className="pt-3"
+            // Only bottom padding here: the top gap lives on the Animated.View
+            // so it stays put while the list scrolls. This keeps the last rule
+            // off the bottom edge when scrolled to the end.
+            className="pb-3"
             onLayout={(event) =>
               setContentHeight(event.nativeEvent.layout.height)
             }
