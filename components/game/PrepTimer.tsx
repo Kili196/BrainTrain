@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { formatDuration } from "../../lib/game-settings";
@@ -28,14 +28,12 @@ export type PrepTimerProps = {
   visible: boolean;
   secondsLeft: number;
   totalSeconds: number;
-  onReady: () => void;
 };
 
 export function PrepTimer({
   visible,
   secondsLeft,
   totalSeconds,
-  onReady,
 }: PrepTimerProps) {
   const enter = useRef(new Animated.Value(0)).current;
 
@@ -116,20 +114,6 @@ export function PrepTimer({
           </Text>
         </View>
       </View>
-
-      {/* Ghost button, design §4 — which names this very label as its example.
-          Deliberately quiet: skipping preparation is the exception. */}
-      <Pressable
-        onPress={onReady}
-        accessibilityRole="button"
-        accessibilityLabel="I'm ready — skip the rest of the preparation"
-        hitSlop={12}
-        className="mt-6 py-2"
-      >
-        <Text className="text-body font-sans-bold text-text-secondary">
-          I&apos;m ready
-        </Text>
-      </Pressable>
     </Animated.View>
   );
 }

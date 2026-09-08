@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
@@ -47,6 +47,13 @@ const BACK_DISTANCE = -1.6;
 // complete rather than being cut off by the overlay.
 const RING_COMPLETE_MS = 400;
 
+// The "I'm ready" pill fades up from the bottom once preparation begins. Delayed
+// so it arrives after the ready-chrome has finished leaving (its opacity fade is
+// CHROME_OPACITY_MS = 260) — one thing at a time, same rule the rest of the
+// transition follows.
+const READY_ENTER_MS = 420;
+const READY_ENTER_DELAY_MS = 260;
+
 export default function Play() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -79,6 +86,10 @@ export default function Play() {
   // hardware-back at prep-end) — otherwise setCounting would fire after unmount.
   const holdTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Drives the bottom "I'm ready" pill. Starts at 0 (hidden) so it never flashes
+  // on the ready screen; animates in when preparation begins.
+  const readyEnter = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     loadGameSettings().then(setSettings);
   }, []);
@@ -89,6 +100,19 @@ export default function Play() {
     },
     []
   );
+
+  useEffect(() => {
+    const preparing = phase === "prep";
+    const animation = Animated.timing(readyEnter, {
+      toValue: preparing ? 1 : 0,
+      duration: READY_ENTER_MS,
+      delay: preparing ? READY_ENTER_DELAY_MS : 0,
+      easing: Easing.bezier(0.5, 0, 0.2, 1),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [phase, readyEnter]);
 
   // The only way out of preparation — reached by the clock running out or by
   // skipping. Both end at the 3·2·1 countdown.
@@ -228,7 +252,6 @@ export default function Play() {
               visible={preparing}
               secondsLeft={frozenSeconds ?? secondsLeft ?? settings.prepSeconds}
               totalSeconds={settings.prepSeconds}
-              onReady={() => setAskSkip(true)}
             />
           </View>
         </View>
@@ -270,6 +293,55 @@ export default function Play() {
           </Pressable>
         </FlyAway>
       </View>
+
+      {/* "I'm ready" — pinned to the bottom, where a screen's action belongs
+          (design §4), rather than crowding the ring. An outline pill in
+          accent-light: the affirmative way forward, but a secondary control, not
+          a second filled primary competing with the ring. Absolutely positioned
+          and fading up on its own driver so it is independent of the centred
+          ring above it. pointerEvents follows `preparing`, since at opacity 0 it
+          would still swallow taps on the ready screen otherwise. */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 24,
+          right: 24,
+          bottom: insets.bottom + 30,
+          alignItems: "center",
+          opacity: readyEnter,
+          transform: [
+            {
+              translateY: readyEnter.interpolate({
+                inputRange: [0, 1],
+                outputRange: [16, 0],
+              }),
+            },
+          ],
+          pointerEvents: preparing ? "auto" : "none",
+        }}
+      >
+        <Pressable
+          onPress={() => setAskSkip(true)}
+          accessibilityRole="button"
+          accessibilityLabel="I'm ready — skip the rest of the preparation"
+          hitSlop={12}
+          // Style object, not a function className: NativeWind's jsx runtime
+          // drops function styles on device (see RulesPanel), so the shape lives
+          // here and press feedback comes from `active:`.
+          className="active:opacity-70"
+          style={{
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: colors.border.selected,
+          }}
+        >
+          <Text className="text-button font-sans-extrabold uppercase tracking-button text-accent-light">
+            I&apos;m ready
+          </Text>
+        </Pressable>
+      </Animated.View>
 
       <Dialog
         visible={askSkip}
