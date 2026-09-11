@@ -35,7 +35,8 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }
