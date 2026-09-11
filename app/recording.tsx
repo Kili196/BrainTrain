@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, Text, View } from "react-native";
+import { Animated, Easing, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
@@ -15,20 +15,20 @@ import {
   type GameSettings,
 } from "../lib/game-settings";
 import { useCountdown } from "../lib/use-countdown";
+import { useSpeechTranscript } from "../lib/use-speech-transcript";
 import { colors } from "../theme/colors";
 
 // The speaking phase, drawn from the "Recording Screen" mockup: the REC pill,
 // the topic, a ring around the time, the waveform, and the pause disc.
 //
-// THE MICROPHONE IS NOT REAL. Nothing is captured, nothing is stored, and the
-// waveform is a fixed pattern rather than a signal — the line at the bottom of
-// the screen says so, and it must keep saying so until there is a recording
-// behind it. What is real is the clock, the pause, and the hand-off.
+// The microphone is now real: useSpeechTranscript runs the OS on-device speech
+// recognizer, so what is said is transcribed live and shown at the bottom. No
+// audio or transcript leaves the phone. The pause disc stops and resumes the
+// recognizer along with the clock. Because it is a native module it does NOT
+// run in Expo Go — a custom dev build is required.
 //
-// When the recording lands: expo-audio with permissions on both platforms, the
-// pause disc pausing the take rather than only the clock, the waveform reading
-// metering, and the audio staying on the device — only metadata goes to the
-// server, per CLAUDE.md.
+// The waveform is still a fixed pattern rather than a real signal, and the
+// transcript is shown for now but not yet saved or analysed — those come next.
 const RING_SIZE = 230;
 const RING_STROKE = 8;
 
@@ -65,6 +65,18 @@ export default function Recording() {
   const paused = held !== null;
   const secondsLeft = useCountdown(paused ? null : endsAt);
 
+  // The live on-device transcript. `start` also requests the mic/speech
+  // permission the first time it runs.
+  const { transcript, status, errorMessage, start, stop } =
+    useSpeechTranscript();
+
+  // Begin listening as soon as the speaking phase mounts — the screen only ever
+  // mounts in the running (not paused) state. `start` is stable, so this fires
+  // once.
+  useEffect(() => {
+    start();
+  }, [start]);
+
   // Falls back to the stored time until the countdown has its deadline, so the
   // number never flashes a placeholder on the way in.
   const remaining = held ?? secondsLeft ?? settings.speakingSeconds;
@@ -83,6 +95,9 @@ export default function Recording() {
   // whatever is actually left, and the digits keep their own second-by-second
   // rhythm underneath.
   const ring = useRef(new Animated.Value(1)).current;
+
+  // So the transcript card can keep scrolling to the newest words as they land.
+  const transcriptScroll = useRef<ScrollView>(null);
 
   useEffect(() => {
     // Paused returns before starting anything, so the cleanup of the previous
@@ -115,11 +130,15 @@ export default function Recording() {
       // reusing the old one — which by now is in the past by exactly the pause.
       setEndsAt(Date.now() + held * 1000);
       setHeld(null);
+      // Resume listening; the transcript keeps appending to what was already said.
+      start();
       return;
     }
 
     setHeld(secondsLeft ?? settings.speakingSeconds);
-  }, [held, secondsLeft, settings.speakingSeconds]);
+    // Pausing the clock pauses the mic too, so nothing is transcribed while stopped.
+    stop();
+  }, [held, secondsLeft, settings.speakingSeconds, start, stop]);
 
   const handOffToQuestions = useCallback(() => {
     // How long was actually spoken: the whole speaking time when the clock ran
@@ -145,6 +164,17 @@ export default function Recording() {
   if (!title) {
     return <Redirect href="/home" />;
   }
+
+  // What the transcript card shows before any words land — it doubles as where
+  // a permission refusal or an unavailable recognizer is surfaced, since the
+  // transcript is the one place the mic's state is visible.
+  const transcriptPlaceholder =
+    status === "denied"
+      ? "Microphone access is off. Turn it on in Settings to see your words here."
+      : status === "error"
+        ? errorMessage ??
+          "Speech recognition isn't available — this needs a dev build, not Expo Go."
+        : "Listening… start speaking and your words will show up here.";
 
   return (
     <View
@@ -260,10 +290,35 @@ export default function Recording() {
         </Pressable>
       </View>
 
-      <View className="items-center gap-3">
-        <Text className="max-w-[290px] text-center text-caption font-sans text-text-muted">
-          Demo mode — the microphone comes later. Only the clock is real.
-        </Text>
+      <View className="gap-3">
+        {/* The live transcript. A bounded, scrollable card rather than a growing
+            block — speech can run long, and letting it push the ring and control
+            around would break the layout above it. */}
+        <View
+          className="gap-2 rounded-lg border bg-card px-4 py-3.5"
+          style={{ maxHeight: 150 }}
+        >
+          <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-faint">
+            Transcript
+          </Text>
+          <ScrollView
+            // Keep the newest words in view as the transcript grows, the way a
+            // caption track scrolls with speech.
+            ref={transcriptScroll}
+            onContentSizeChange={() =>
+              transcriptScroll.current?.scrollToEnd({ animated: true })
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            <Text
+              className={`text-body font-sans ${
+                transcript ? "text-text" : "text-text-muted"
+              }`}
+            >
+              {transcript || transcriptPlaceholder}
+            </Text>
+          </ScrollView>
+        </View>
 
         {/* Without this the only way on is to sit out the whole speaking time,
             which makes the rest of the round untestable. */}
@@ -272,7 +327,7 @@ export default function Recording() {
           accessibilityRole="button"
           accessibilityLabel="Skip the speaking time and go to the questions"
           hitSlop={12}
-          className="py-1"
+          className="items-center py-1"
         >
           <Text className="text-body font-sans-bold text-text-secondary">
             Skip to the questions

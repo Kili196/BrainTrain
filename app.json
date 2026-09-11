@@ -7,7 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.braintrain.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +25,17 @@
     "scheme": "braintrain",
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "BrainTrain uses the microphone to transcribe what you say during a speaking round.",
+          "speechRecognitionPermission": "BrainTrain transcribes your speech on-device so it can be shown back and later analysed.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
     ]
   }
 }
