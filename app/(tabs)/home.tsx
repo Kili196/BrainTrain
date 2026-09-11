@@ -250,170 +250,169 @@ export default function Home() {
           paddingBottom: insets.bottom + 30,
         }}
       >
-      {/* Leaves upwards, and is the first to go. */}
-      <FlyAway away={starting} distance={-1.6} delayAway={0} delayBack={120}>
-        <View
-          // y is already measured from the top of the screen — Yoga reports a
-          // child's position inside the parent's border box, so the padding
-          // above is included. The fly-away's transform is not, which is what
-          // we want: the field must not follow the header off-screen.
-          onLayout={(event) => {
-            const { y, height } = event.nativeEvent.layout;
-            setHeaderBottom(y + height);
+        {/* Leaves upwards, and is the first to go. */}
+        <FlyAway away={starting} distance={-1.6} delayAway={0} delayBack={120}>
+          <View
+            // y is already measured from the top of the screen — Yoga reports a
+            // child's position inside the parent's border box, so the padding
+            // above is included. The fly-away's transform is not, which is what
+            // we want: the field must not follow the header off-screen.
+            onLayout={(event) => {
+              const { y, height } = event.nativeEvent.layout;
+              setHeaderBottom(y + height);
+            }}
+          >
+            <HomeHeader
+              streakDays={PLACEHOLDER_STREAK_DAYS}
+              hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
+            />
+          </View>
+        </FlyAway>
+
+        {/* The stage never leaves — it grows, on a slower curve than the chrome,
+            so it reads as settling into place while everything else snaps away. */}
+        <Animated.View
+          // Plain styles rather than classes: NativeWind's className is not wired
+          // through Animated components.
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            transform: [{ scale: stageScale }],
           }}
         >
-          <HomeHeader
-            streakDays={PLACEHOLDER_STREAK_DAYS}
-            hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
-          />
-        </View>
-      </FlyAway>
+          {/* The topic lives inside the ring, not beside it — the ring is the
+              drag surface, and touches only ever travel up the tree. */}
+          <TopicOrbit titles={backdrop} locked={isDrawing}>
+            <StageTopic title={title ?? "Your topic"} />
+          </TopicOrbit>
 
-      {/* The stage never leaves — it grows, on a slower curve than the chrome,
-          so it reads as settling into place while everything else snaps away. */}
-      <Animated.View
-        // Plain styles rather than classes: NativeWind's className is not wired
-        // through Animated components.
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          transform: [{ scale: stageScale }],
-        }}
-      >
-        {/* The topic lives inside the ring, not beside it — the ring is the
-            drag surface, and touches only ever travel up the tree. */}
-        <TopicOrbit titles={backdrop} locked={isDrawing}>
-          <StageTopic title={title ?? "Your topic"} />
-        </TopicOrbit>
-
-        {/* Caption under the stage. Fixed height so landing a draw cannot shift
-            the ring above it; the tracking is the mockup's 0.12em at 10px,
-            which sits between the eyebrow and button tokens. */}
-        <View className="mt-1.5 h-6 justify-center">
-          <Text
-            className={`text-center text-eyebrow font-sans-bold uppercase ${
-              isDrawing ? "text-accent" : "text-text-muted"
-            }`}
-            style={{ letterSpacing: 1.2 }}
-          >
-            {isDrawing ? "Topic drawn" : ""}
-          </Text>
-        </View>
-
-        {error ? (
-          <Text className="mt-4 text-center text-body font-sans text-error">
-            {error}
-          </Text>
-        ) : null}
-      </Animated.View>
-
-      {/* Everything below the stage leaves as one block, downwards, just after
-          the header starts up. */}
-      <FlyAway away={starting} distance={2.05} delayAway={60} delayBack={60}>
-        <View className="items-center gap-4">
-          <Pressable
-            onPress={() => setOpenSheet("settings")}
-            accessibilityRole="button"
-            accessibilityLabel="Round settings"
-            hitSlop={12}
-          >
-            <GearIcon size={20} color={colors.text.muted} />
-          </Pressable>
-
-          <Button
-            // The label stays put during a draw — the reel and the caption
-            // already say what is happening, and the hero button reflowing
-            // mid-spin would pull the eye away from the one place it should be.
-            label="Play"
-            onPress={() => setOpenSheet("mode")}
-            disabled={isDrawing}
-            variant="hero"
-            accessibilityLabel="Play — choose where the topic comes from"
-          />
-
-          {/* Dev convenience: re-run onboarding without reinstalling. Ghost
-              styling on purpose — the screen may only ever have one filled
-              button. Behind __DEV__, like the shortcut below it: this has no
-              business in a build either. */}
-          {__DEV__ ? (
-            <Pressable
-              onPress={reset}
-              accessibilityRole="button"
-              className="py-2"
+          {/* Caption under the stage. Fixed height so landing a draw cannot shift
+              the ring above it; the tracking is the mockup's 0.12em at 10px,
+              which sits between the eyebrow and button tokens. */}
+          <View className="mt-1.5 h-6 justify-center">
+            <Text
+              className={`text-center text-eyebrow font-sans-bold uppercase ${
+                isDrawing ? "text-accent" : "text-text-muted"
+              }`}
+              style={{ letterSpacing: 1.2 }}
             >
-              <Text className="text-body font-sans-bold text-text-muted">
-                Reset onboarding
-              </Text>
-            </Pressable>
+              {isDrawing ? "Topic drawn" : ""}
+            </Text>
+          </View>
+
+          {error ? (
+            <Text className="mt-4 text-center text-body font-sans text-error">
+              {error}
+            </Text>
           ) : null}
+        </Animated.View>
 
-          {/* The result screen otherwise costs a whole round to look at. Behind
-              __DEV__, unlike the row above it: that one is a convenience, this
-              one is a shortcut straight past the game and has no business in a
-              build.
-
-              It draws a real topic on the way, because the result screen
-              re-fetches its questions by id: without one, `questions` stays
-              null, the chips are disabled and the review section has nothing to
-              show — two thirds of the screen this shortcut exists to look at.
-              The outcomes stay invented; only the topic is real. */}
-          {__DEV__ ? (
+        {/* Everything below the stage leaves as one block, downwards, just after
+            the header starts up. */}
+        <FlyAway away={starting} distance={2.05} delayAway={60} delayBack={60}>
+          <View className="items-center gap-4">
             <Pressable
-              onPress={async () => {
-                // Quiet on failure: a shortcut that lands without explanations
-                // is still worth more than one that does nothing.
-                const topic = await fetchRandomTopic().catch(() => null);
-
-                router.push({
-                  pathname: "/quiz-result",
-                  params: {
-                    ...(topic ? { topicId: topic.id } : {}),
-                    title: topic?.title ?? "Test round",
-                    results: "10110",
-                    picks: "0|1.2|0|2|3",
-                    seconds: "192",
-                  },
-                });
-              }}
+              onPress={() => setOpenSheet("settings")}
               accessibilityRole="button"
-              className="py-2"
+              accessibilityLabel="Round settings"
+              hitSlop={12}
             >
-              <Text className="text-body font-sans-bold text-text-muted">
-                Show a round result
-              </Text>
+              <GearIcon size={20} color={colors.text.muted} />
             </Pressable>
-          ) : null}
-        </View>
-      </FlyAway>
 
-      {/* Sheets are Modals, so where they sit in the tree does not affect the
-          layout — and the fly-away cannot catch them. */}
-      <PlayModeSheet
-        visible={openSheet === "mode"}
-        dailyUnseen={isDailyUnseen}
-        onStandard={drawStandard}
-        onDaily={drawDaily}
-        onClose={() => setOpenSheet("none")}
-      />
+            <Button
+              // The label stays put during a draw — the reel and the caption
+              // already say what is happening, and the hero button reflowing
+              // mid-spin would pull the eye away from the one place it should be.
+              label="Play"
+              onPress={() => setOpenSheet("mode")}
+              disabled={isDrawing}
+              variant="hero"
+              accessibilityLabel="Play — choose where the topic comes from"
+            />
 
-      <SettingsSheet
-        visible={openSheet === "settings"}
-        settings={settings}
-        onChange={updateSettings}
-        onPickCategory={() => setOpenSheet("category")}
-        onClose={() => setOpenSheet("none")}
-      />
+            {/* Dev convenience: re-run onboarding without reinstalling. Ghost
+                styling on purpose — the screen may only ever have one filled
+                button. Behind __DEV__, like the shortcut below it: this has no
+                business in a build either. */}
+            {__DEV__ ? (
+              <Pressable
+                onPress={reset}
+                accessibilityRole="button"
+                className="py-2"
+              >
+                <Text className="text-body font-sans-bold text-text-muted">
+                  Reset onboarding
+                </Text>
+              </Pressable>
+            ) : null}
 
-      <CategorySheet
-        visible={openSheet === "category"}
-        selected={settings.categoryKey}
-        onSelect={selectCategory}
-        // Backing out returns to the settings sheet rather than to the screen,
-        // so the picker behaves like a step inside it and not like a detour.
-        onClose={() => setOpenSheet("settings")}
-      />
+            {/* The result screen otherwise costs a whole round to look at. Behind
+                __DEV__, unlike the row above it: that one is a convenience, this
+                one is a shortcut straight past the game and has no business in a
+                build.
 
+                It draws a real topic on the way, because the result screen
+                re-fetches its questions by id: without one, `questions` stays
+                null, the chips are disabled and the review section has nothing to
+                show — two thirds of the screen this shortcut exists to look at.
+                The outcomes stay invented; only the topic is real. */}
+            {__DEV__ ? (
+              <Pressable
+                onPress={async () => {
+                  // Quiet on failure: a shortcut that lands without explanations
+                  // is still worth more than one that does nothing.
+                  const topic = await fetchRandomTopic().catch(() => null);
+
+                  router.push({
+                    pathname: "/quiz-result",
+                    params: {
+                      ...(topic ? { topicId: topic.id } : {}),
+                      title: topic?.title ?? "Test round",
+                      results: "10110",
+                      picks: "0|1.2|0|2|3",
+                      seconds: "192",
+                    },
+                  });
+                }}
+                accessibilityRole="button"
+                className="py-2"
+              >
+                <Text className="text-body font-sans-bold text-text-muted">
+                  Show a round result
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </FlyAway>
+
+        {/* Sheets are Modals, so where they sit in the tree does not affect the
+            layout — and the fly-away cannot catch them. */}
+        <PlayModeSheet
+          visible={openSheet === "mode"}
+          dailyUnseen={isDailyUnseen}
+          onStandard={drawStandard}
+          onDaily={drawDaily}
+          onClose={() => setOpenSheet("none")}
+        />
+
+        <SettingsSheet
+          visible={openSheet === "settings"}
+          settings={settings}
+          onChange={updateSettings}
+          onPickCategory={() => setOpenSheet("category")}
+          onClose={() => setOpenSheet("none")}
+        />
+
+        <CategorySheet
+          visible={openSheet === "category"}
+          selected={settings.categoryKey}
+          onSelect={selectCategory}
+          // Backing out returns to the settings sheet rather than to the screen,
+          // so the picker behaves like a step inside it and not like a detour.
+          onClose={() => setOpenSheet("settings")}
+        />
       </View>
     </View>
   );
