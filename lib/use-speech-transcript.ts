@@ -1,8 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
 
 // On-device speech-to-text for the recording screen.
 //
@@ -13,6 +9,23 @@ import {
 //
 // The recognizer will not run in Expo Go — it needs a custom dev build. See the
 // README / the note on the recording screen.
+
+// The package binds to the native recognizer at import time: its top-level
+// requireNativeModule throws when the module is not in the binary, which in
+// Expo Go is always. A static import would therefore take the recording screen
+// down before any of our code ran — including the "needs a dev build" message
+// the screen is already able to show. Going through require inside a try/catch
+// turns that crash into a null we can branch on, which is what keeps the rest
+// of the app usable in Expo Go while the microphone is not.
+type SpeechModule = typeof import("expo-speech-recognition");
+
+const speech: SpeechModule | null = (() => {
+  try {
+    return require("expo-speech-recognition");
+  } catch {
+    return null;
+  }
+})();
 
 // "listening" once the recognizer is capturing; "denied" when the user refused
 // the mic/speech permission; "error" for anything else (no recognizer, network
@@ -32,44 +45,72 @@ export function useSpeechTranscript() {
   // half-heard guess would stick around after it was corrected.
   const finalRef = useRef("");
 
-  useSpeechRecognitionEvent("start", () => setStatus("listening"));
+  // All four listeners in one subscription rather than through the package's
+  // useSpeechRecognitionEvent, which would re-introduce the very import avoided
+  // above. Each addListener is called with a literal event name, so every
+  // payload below is typed by the recognizer's own event map. They are set up
+  // once: the callbacks only reach for setState and a ref, both of which are
+  // stable, so there is nothing a later render could make them miss.
+  useEffect(() => {
+    if (!speech) return;
 
-  // "end" fires on a normal stop as well as after an error; don't let it clobber
-  // a denied/error status we want to keep showing.
-  useSpeechRecognitionEvent("end", () =>
-    setStatus((prev) => (prev === "denied" || prev === "error" ? prev : "idle"))
-  );
+    const recognizer = speech.ExpoSpeechRecognitionModule;
 
-  useSpeechRecognitionEvent("result", (event) => {
-    const latest = event.results[0]?.transcript ?? "";
-    if (event.isFinal) {
-      finalRef.current = `${finalRef.current} ${latest}`.trim();
-      setTranscript(finalRef.current);
-    } else {
-      setTranscript(`${finalRef.current} ${latest}`.trim());
-    }
-  });
+    const subscriptions = [
+      recognizer.addListener("start", () => setStatus("listening")),
 
-  useSpeechRecognitionEvent("error", (event) => {
-    // "no-speech" is just a quiet stretch, not a failure — the recognizer emits
-    // it when nobody talks for a while. Swallow it so a pause doesn't look broken.
-    if (event.error === "no-speech") return;
-    setStatus(event.error === "not-allowed" ? "denied" : "error");
-    setErrorMessage(event.message);
-  });
+      // "end" fires on a normal stop as well as after an error; don't let it
+      // clobber a denied/error status we want to keep showing.
+      recognizer.addListener("end", () =>
+        setStatus((prev) =>
+          prev === "denied" || prev === "error" ? prev : "idle"
+        )
+      ),
+
+      recognizer.addListener("result", (event) => {
+        const latest = event.results[0]?.transcript ?? "";
+        if (event.isFinal) {
+          finalRef.current = `${finalRef.current} ${latest}`.trim();
+          setTranscript(finalRef.current);
+        } else {
+          setTranscript(`${finalRef.current} ${latest}`.trim());
+        }
+      }),
+
+      recognizer.addListener("error", (event) => {
+        // "no-speech" is just a quiet stretch, not a failure — the recognizer
+        // emits it when nobody talks for a while. Swallow it so a pause does
+        // not look broken.
+        if (event.error === "no-speech") return;
+        setStatus(event.error === "not-allowed" ? "denied" : "error");
+        setErrorMessage(event.message);
+      }),
+    ];
+
+    return () => subscriptions.forEach((subscription) => subscription.remove());
+  }, []);
 
   const start = useCallback(async () => {
     setErrorMessage(null);
 
+    // No native recognizer — Expo Go, or a dev build made before the plugin was
+    // added. Reported as an error so the transcript card says so, and nothing
+    // more: the round still runs, it just produces no transcript.
+    if (!speech) {
+      setStatus("error");
+      return;
+    }
+
     // Requests mic (+ speech recognition on iOS) the first time; on later calls
     // it resolves immediately with the remembered answer.
-    const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    const permission =
+      await speech.ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!permission.granted) {
       setStatus("denied");
       return;
     }
 
-    ExpoSpeechRecognitionModule.start({
+    speech.ExpoSpeechRecognitionModule.start({
       lang: "en-US",
       // Show words as they are recognised rather than only at the end of a
       // sentence — the point of the screen is to watch the transcript build.
@@ -82,7 +123,7 @@ export function useSpeechTranscript() {
   }, []);
 
   const stop = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    speech?.ExpoSpeechRecognitionModule.stop();
   }, []);
 
   const reset = useCallback(() => {
@@ -92,7 +133,7 @@ export function useSpeechTranscript() {
 
   // If the screen goes away mid-take, tear the recognizer down hard — abort()
   // drops it without waiting for a final result. Safe to call when idle.
-  useEffect(() => () => ExpoSpeechRecognitionModule.abort(), []);
+  useEffect(() => () => speech?.ExpoSpeechRecognitionModule.abort(), []);
 
   return { transcript, status, errorMessage, start, stop, reset };
 }
