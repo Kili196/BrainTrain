@@ -23,11 +23,13 @@ import type { Topic } from "./topics";
 // Deliberately not persisted. A round interrupted by the app closing is not one
 // worth uploading, and keeping it would mean deciding when it goes stale.
 export type RoundSession = {
-  // Per round, not per device. `speech_sessions` has a unique index on
-  // (user_id, client_id), so a retried upload updates the round it already has
-  // rather than leaving a second copy. React Native has no global
-  // crypto.randomUUID, which is why this comes from expo-crypto.
-  clientId: string;
+  // An idempotency key for this one recording, NOT a device id — the column it
+  // fills was renamed for exactly that confusion, because a constant device id
+  // against the unique index on (user_id, client_session_id) allows only one
+  // session per phone, ever. Fresh per round, so a retried upload updates the
+  // row it already wrote. React Native has no global crypto.randomUUID, which
+  // is why this comes from expo-crypto.
+  clientSessionId: string;
   topicId: string;
   topicSlug: string;
   title: string;
@@ -67,7 +69,7 @@ export function RoundSessionProvider({ children }: { children: ReactNode }) {
     // Replaces whatever was there. Redrawing a topic starts a new round, and
     // the abandoned one was never saved.
     setRound({
-      clientId: randomUUID(),
+      clientSessionId: randomUUID(),
       topicId: topic.id,
       topicSlug: topic.slug,
       title: topic.title,

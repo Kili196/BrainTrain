@@ -13,9 +13,9 @@ import { colors } from "../theme/colors";
 //
 // NOTHING IS ANALYSED HERE. There is no recording to transcribe, no delivery to
 // measure and no facts to check — the four steps are a timer with labels on it,
-// and the result was already decided when the last question was answered. Like
-// FAKE_SAVE_MS on the result screen, this must not ship to real users in this
-// state: it claims work that is not happening.
+// and the result was already decided when the last question was answered. This
+// must not ship to real users in this state: it claims work that is not
+// happening. It is now the last screen in the round that does.
 //
 // It is not throwaway either. When the scoring pipeline exists behind an Edge
 // Function, this is the screen that waits for it: the steps become its real

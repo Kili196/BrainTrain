@@ -112,15 +112,18 @@ Topics are wired end to end; auth and saving a round are the two pieces still st
   `fetchQuizQuestions`, `fetchRandomTopic(s)`, `fetchDailyTopic`) are done and typed
   from `lib/database.types.ts`, and screens call them directly: `home.tsx` draws
   topics, `quiz.tsx` and `quiz-result.tsx` fetch the quiz questions for a round.
-- The Supabase client is **anonymous** — there is no sign-in flow yet, so every
-  request runs unauthenticated.
-- Because of that, `speech_sessions` writes are deliberate placeholders: "Save round"
-  on the result screen and the "analyzing" step before it both fake their work
-  (see `FAKE_SAVE_MS` in `app/quiz-result.tsx`) rather than write anything, since RLS
-  keys that table on `auth.uid()` and there is no session to key it to.
-
-So the app starting successfully only proves the app runs — whether the database is
-reachable shows up in step 6 or in the first real query.
+- Every player is signed in **anonymously** (`lib/auth-context.tsx`), established
+  before any screen mounts and kept in the Keychain / encrypted shared preferences
+  through `lib/secure-store-adapter.ts`. Without a session `auth.uid()` is null and
+  RLS keeps `speech_sessions` shut, so the gate is what makes saving possible at all.
+- A finished round is **written for real**: `lib/round-session.tsx` carries it from the
+  draw to the result screen, and `lib/speech-sessions.ts` upserts it — topic, start,
+  spoken duration, quiz score and the on-device transcript.
+- Still faked: the "analyzing" step between the last answer and the result
+  (`app/analyzing.tsx`) is a timer with labels on it. Nothing is analysed yet.
+- The **microphone needs a custom dev build** — `expo-speech-recognition` is a native
+  module and is not in Expo Go. The app itself runs in Expo Go; the recording screen
+  says so in place of a transcript, and the round then saves with `transcript` null.
 
 ## Changing content
 

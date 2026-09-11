@@ -28,8 +28,9 @@ import { colors } from "../theme/colors";
 // recognizer along with the clock. Because it is a native module it does NOT
 // run in Expo Go — a custom dev build is required.
 //
-// The waveform is still a fixed pattern rather than a real signal, and the
-// transcript is shown for now but not yet saved or analysed — those come next.
+// The waveform is still a fixed pattern rather than a real signal. The
+// transcript is stamped into the round on the way out and saved with it on the
+// result screen; analysing it is still to come.
 const RING_SIZE = 230;
 const RING_STROKE = 8;
 
