@@ -29,6 +29,7 @@ import {
   markDailyTopicSeen,
 } from "../../lib/daily-topic-seen";
 import { clearOnboarding } from "../../lib/onboarding-storage";
+import { useRoundSession } from "../../lib/round-session";
 import { useRoundStart } from "../../lib/round-start-context";
 import {
   fetchDailyTopic,
@@ -72,6 +73,7 @@ export default function Home() {
   // Owned by the tab layout, because the black layer has to cover the tab bar
   // and the tab bar has to slide with everything else.
   const { starting, setStarting, setFading } = useRoundStart();
+  const { begin } = useRoundSession();
 
   const stageScale = useRef(new Animated.Value(1)).current;
 
@@ -130,6 +132,11 @@ export default function Home() {
 
     const toBlack = setTimeout(() => setFading(true), FADE_START_MS);
     const handoff = setTimeout(() => {
+      // Here rather than on /play, because this is the last place the whole
+      // topic exists: the navigation carries the id and the title, and the
+      // table needs the slug.
+      begin(topic);
+
       router.push({
         pathname: "/play",
         params: { topicId: topic.id, title: topic.title },
@@ -140,7 +147,7 @@ export default function Home() {
       clearTimeout(toBlack);
       clearTimeout(handoff);
     };
-  }, [topic, router, setFading]);
+  }, [topic, router, setFading, begin]);
 
   // A draw that ends without a topic — a failed request, or a pool with nothing
   // left in it — never reaches the hand-off above, so the chrome would stay off

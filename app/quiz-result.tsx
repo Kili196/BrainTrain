@@ -7,7 +7,10 @@ import { QuestionReviewSheet } from "../components/game/QuestionReviewSheet";
 import { ChevronRightIcon } from "../components/icons/ChevronRightIcon";
 import { BobbingDots } from "../components/ui/BobbingDots";
 import { Button } from "../components/ui/Button";
+import { useUserId } from "../lib/auth-context";
 import { formatDuration } from "../lib/game-settings";
+import { useRoundSession } from "../lib/round-session";
+import { isFinished, saveSpeechSession } from "../lib/speech-sessions";
 import { useToast } from "../lib/toast-context";
 import { fetchQuizQuestions, type QuizQuestion } from "../lib/topics";
 import { useReduceMotion } from "../lib/use-reduce-motion";
@@ -21,8 +24,8 @@ import { colors } from "../theme/colors";
 // are worth 20 each. The mockup counts ten questions at ten points; the
 // database has five per topic and that is what the round asks.
 //
-// Nothing is saved. Without auth there is no session to save it to — RLS keys
-// `speech_sessions` on auth.uid() — so the round is gone the moment you leave.
+// This is where a round is written to the database, and the only place that
+// happens. Everything before it is in memory.
 const TOTAL_POINTS = 100;
 
 // The number counts up rather than appearing: an arriving figure is a result
@@ -34,18 +37,13 @@ const CHIP_WIDTH = 44;
 const CHIP_HEIGHT = 40;
 const CHIP_RADIUS = 14;
 
-// How long the save appears to take. THIS SAVES NOTHING — there is no account
-// to save to yet, because without auth RLS keeps `speech_sessions` shut. It is
-// here to hold the shape of the real thing, and it must not ship to real users
-// in this state: it tells them their round was kept when it was not. When the
-// session write exists, `saveRound` below is the only thing that changes.
-const FAKE_SAVE_MS = 1800;
-
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const reduceMotion = useReduceMotion();
   const toast = useToast();
+  const userId = useUserId();
+  const { round, clear } = useRoundSession();
 
   const { title, topicId, results, picks, seconds } = useLocalSearchParams<{
     title?: string;
@@ -82,20 +80,43 @@ export default function QuizResult() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // The wait, and then the claim — read on Home rather than here, which is why
+  // The write, and then the claim — read on Home rather than here, which is why
   // the toast lives above the navigator. In an effect rather than in the press
-  // handler so leaving mid-save clears the timer instead of landing on a screen
-  // that is gone; the real request will need exactly the same.
+  // handler, so leaving mid-save drops the result instead of landing on a
+  // screen that is gone.
   useEffect(() => {
     if (!saving) return;
 
-    const done = setTimeout(() => {
-      toast.show("Round saved");
-      router.replace("/home");
-    }, FAKE_SAVE_MS);
+    // Guarded by the disabled button below, and again here because the button
+    // is not the only thing that can set `saving`.
+    if (!isFinished(round)) return;
 
-    return () => clearTimeout(done);
-  }, [saving, toast, router]);
+    let cancelled = false;
+
+    saveSpeechSession(round, userId, points)
+      .then(() => {
+        if (cancelled) return;
+        // So the round cannot be written a second time by coming back to this
+        // screen. The upsert would collapse it onto the same row anyway; this
+        // is the cheaper half of that guarantee.
+        clear();
+        toast.show("Round saved");
+        router.replace("/home");
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        // Stay on the screen with the button back: the round is still in
+        // memory, so trying again is a tap, and leaving is the only thing that
+        // actually loses it.
+        console.warn("[round] could not be saved:", error);
+        setSaving(false);
+        toast.show("Couldn't save your round — try again");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [saving, round, userId, points, clear, toast, router]);
 
   useEffect(() => {
     if (!topicId) return;
@@ -331,7 +352,16 @@ export default function QuizResult() {
         className="gap-3.5 px-6 pt-4"
         style={{ paddingBottom: insets.bottom + 30 }}
       >
-        <Button label="Save round" onPress={() => setSaving(true)} />
+        {/* Disabled rather than hidden when there is no round to write: in a
+            real round there always is one, and the only way here without one is
+            the __DEV__ shortcut on Home. Muted, per design §4 — a dimmed blue
+            button still reads as the thing to press. */}
+        <Button
+          label="Save round"
+          onPress={() => setSaving(true)}
+          disabled={!isFinished(round)}
+          disabledStyle="muted"
+        />
 
         {/* Ghost, per design §4: one filled button to a screen, and leaving
             without saving should not look like the thing to do. */}

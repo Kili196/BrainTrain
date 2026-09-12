@@ -12,6 +12,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AuthProvider } from "../lib/auth-context";
+import { RoundSessionProvider } from "../lib/round-session";
 import { ToastProvider } from "../lib/toast-context";
 import { colors } from "../theme/colors";
 
@@ -37,27 +39,37 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      {/* Around the Stack, so a confirmation raised on one screen can be read
-          on the next one. */}
-      <ToastProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          {/* Every screen is near-black, so a cross-fade reads much like the
-              black veil the design calls for (§12) without a custom layer. The
-              veil itself is an app-wide pattern and should land once, across
-              all navigation, rather than on this one route. */}
-          <Stack.Screen name="play" options={{ animation: "fade" }} />
-          <Stack.Screen name="recording" options={{ animation: "fade" }} />
-          <Stack.Screen name="quiz-intro" options={{ animation: "fade" }} />
-          <Stack.Screen name="quiz" options={{ animation: "fade" }} />
-          <Stack.Screen name="analyzing" options={{ animation: "fade" }} />
-          <Stack.Screen name="quiz-result" options={{ animation: "fade" }} />
-        </Stack>
-      </ToastProvider>
+      {/* Above everything: no screen may run before there is an account, or the
+          app would look like it works while nothing can be saved. Inside the
+          safe-area provider, because its retry screen needs the insets. */}
+      <AuthProvider>
+        {/* Around the Stack, so a confirmation raised on one screen can be read
+            on the next one. */}
+        <ToastProvider>
+          {/* A round outlives every screen it passes through — drawn on Home,
+              spoken on recording, saved on the result — so it cannot live in
+              any one of them. */}
+          <RoundSessionProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.bg },
+              }}
+            >
+              {/* Every screen is near-black, so a cross-fade reads much like the
+                  black veil the design calls for (§12) without a custom layer.
+                  The veil itself is an app-wide pattern and should land once,
+                  across all navigation, rather than on this one route. */}
+              <Stack.Screen name="play" options={{ animation: "fade" }} />
+              <Stack.Screen name="recording" options={{ animation: "fade" }} />
+              <Stack.Screen name="quiz-intro" options={{ animation: "fade" }} />
+              <Stack.Screen name="quiz" options={{ animation: "fade" }} />
+              <Stack.Screen name="analyzing" options={{ animation: "fade" }} />
+              <Stack.Screen name="quiz-result" options={{ animation: "fade" }} />
+            </Stack>
+          </RoundSessionProvider>
+        </ToastProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

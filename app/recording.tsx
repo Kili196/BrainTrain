@@ -14,6 +14,7 @@ import {
   loadGameSettings,
   type GameSettings,
 } from "../lib/game-settings";
+import { useRoundSession } from "../lib/round-session";
 import { useCountdown } from "../lib/use-countdown";
 import { useSpeechTranscript } from "../lib/use-speech-transcript";
 import { colors } from "../theme/colors";
@@ -27,8 +28,9 @@ import { colors } from "../theme/colors";
 // recognizer along with the clock. Because it is a native module it does NOT
 // run in Expo Go — a custom dev build is required.
 //
-// The waveform is still a fixed pattern rather than a real signal, and the
-// transcript is shown for now but not yet saved or analysed — those come next.
+// The waveform is still a fixed pattern rather than a real signal. The
+// transcript is stamped into the round on the way out and saved with it on the
+// result screen; analysing it is still to come.
 const RING_SIZE = 230;
 const RING_STROKE = 8;
 
@@ -69,6 +71,20 @@ export default function Recording() {
   // permission the first time it runs.
   const { transcript, status, errorMessage, start, stop } =
     useSpeechTranscript();
+
+  const { finishSpeaking } = useRoundSession();
+
+  // When the speaking actually began. This screen only ever mounts at the start
+  // of the speaking phase, so first render is the moment — the prep timer that
+  // ran before it is not part of the round.
+  const startedAt = useRef(new Date().toISOString());
+
+  // The transcript is read once, at the hand-off, but it changes on every
+  // recognised word. Keeping it in a ref keeps it out of the hand-off's
+  // dependencies, so the effect that fires when the clock hits zero cannot be
+  // re-triggered by a late result arriving after it already fired.
+  const latestTranscript = useRef(transcript);
+  latestTranscript.current = transcript;
 
   // Begin listening as soon as the speaking phase mounts — the screen only ever
   // mounts in the running (not paused) state. `start` is stable, so this fires
@@ -142,17 +158,34 @@ export default function Recording() {
 
   const handOffToQuestions = useCallback(() => {
     // How long was actually spoken: the whole speaking time when the clock ran
-    // out, less than that when it was cut short here. The intro screen shows it
-    // back, and it is the only place that number survives.
-    const spoken = settings.speakingSeconds - remaining;
+    // out, less than that when it was cut short here.
+    const spoken = Math.max(0, settings.speakingSeconds - remaining);
+
+    // Into the round, which is what survives to the result screen and gets
+    // saved there. The param below still carries the number to the intro
+    // screen, which only shows it back.
+    finishSpeaking({
+      startedAt: startedAt.current,
+      spokenMs: spoken * 1000,
+      // An empty transcript is nothing said, or nothing heard — either way
+      // there is no text, and the column takes null rather than "".
+      transcript: latestTranscript.current.trim() || null,
+    });
 
     // replace, not push: a finished speaking phase is not somewhere to come
     // back to.
     router.replace({
       pathname: "/quiz-intro",
-      params: { topicId, title, spoken: String(Math.max(0, spoken)) },
+      params: { topicId, title, spoken: String(spoken) },
     });
-  }, [router, topicId, title, settings.speakingSeconds, remaining]);
+  }, [
+    router,
+    topicId,
+    title,
+    settings.speakingSeconds,
+    remaining,
+    finishSpeaking,
+  ]);
 
   // Time is up. The same hand-off the skip link makes: those are the only two
   // ways out of the speaking phase, and they end it identically.
