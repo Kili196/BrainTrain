@@ -4,65 +4,56 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { ProgressRing } from "../components/ui/ProgressRing";
+import { useUserId } from "../lib/auth-context";
+import { parseOutcomes, scoreFromOutcomes } from "../lib/quiz-score";
+import { useRoundSession } from "../lib/round-session";
+import { isFinished, saveSpeechSession } from "../lib/speech-sessions";
+import { useToast } from "../lib/toast-context";
 import { useReduceMotion } from "../lib/use-reduce-motion";
 import { colors } from "../theme/colors";
 
 // The beat between the last answer and the result, drawn from the "Analyzing"
-// mockup: a ring counting to a hundred, four steps lighting one after another,
-// and a line saying what is happening.
+// mockup: a ring counting up and a line saying what is happening.
 //
-// NOTHING IS ANALYSED HERE. There is no recording to transcribe, no delivery to
-// measure and no facts to check — the four steps are a timer with labels on it,
-// and the result was already decided when the last question was answered. This
-// must not ship to real users in this state: it claims work that is not
-// happening. It is now the last screen in the round that does.
+// It used to claim four things — transcribing the recording, measuring delivery,
+// checking facts against sources, writing feedback — and do none of them. There
+// was no analysis behind it: the steps were a 5.2s timer with labels on, and the
+// result had been decided before the screen mounted.
 //
-// It is not throwaway either. When the scoring pipeline exists behind an Edge
-// Function, this is the screen that waits for it: the steps become its real
-// stages and RUN_MS gives way to however long the request takes.
-const RUN_MS = 5200;
+// There is no AI in the MVP, so the four steps were not replaced with four
+// truer-sounding ones. Exactly one real thing happens between the quiz and the
+// result, and it is this screen that now waits for it: the round is written to
+// `speech_sessions`. A list of one is not a list, so the list is gone.
+//
+// The ring counts the player's score instead of a percentage. A percentage over
+// a network write of unknown length is a different kind of lie — nothing can
+// know it is 43% done — while the score is a real number that is already
+// settled, and the count gives the write a floor to finish inside.
+const COUNT_MS = 1400;
 
-// Reduced motion still gets the screen — losing the steps entirely would hide
-// what the app is doing — but it is over in a beat rather than held.
-const RUN_REDUCED_MS = 1200;
+// Reduced motion still gets the count — the number arriving is the point of the
+// screen — but it is over in a beat rather than held.
+const COUNT_REDUCED_MS = 400;
 
 const RING_SIZE = 230;
 // The thin ring of design §12, where the speaking timer takes the 8px one. This
 // screen is about the number in the middle, not the arc around it.
 const RING_STROKE = 3;
 
-// The meta word is the mockup's: a quiet tag on the right of the row saying
-// which part of the round that step is reading.
-const STEPS = [
-  {
-    label: "Transcribing your recording",
-    meta: "audio",
-    status: "Listening to how you said it.",
-  },
-  {
-    label: "Measuring delivery",
-    meta: "delivery",
-    status: "Pace, pauses, and the words in between.",
-  },
-  {
-    label: "Checking your facts",
-    meta: "facts",
-    status: "Holding your claims against the sources.",
-  },
-  {
-    label: "Scoring and writing feedback",
-    meta: "score",
-    status: "Putting the round together.",
-  },
-];
+// `pending` until the write answers. Both other outcomes leave this screen; the
+// difference is whether `quiz-result` still has to offer a retry.
+type SaveOutcome = "pending" | "stored" | "unsaved";
 
 export default function Analyzing() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const reduceMotion = useReduceMotion();
+  const toast = useToast();
+  const userId = useUserId();
+  const { round, clear } = useRoundSession();
 
-  // Everything the result screen needs, carried through untouched — this screen
-  // reads none of it except the title.
+  // Everything the result screen needs, carried through untouched. This screen
+  // reads the title and the marks; the rest it only passes on.
   const { title, topicId, results, picks, seconds } = useLocalSearchParams<{
     title?: string;
     topicId?: string;
@@ -71,15 +62,57 @@ export default function Analyzing() {
     seconds?: string;
   }>();
 
+  const outcomes = parseOutcomes(results);
+  const points = scoreFromOutcomes(outcomes);
+
   const progress = useRef(new Animated.Value(0)).current;
-  const [percent, setPercent] = useState(0);
+  const [shown, setShown] = useState(0);
+  const [counted, setCounted] = useState(false);
+  const [outcome, setOutcome] = useState<SaveOutcome>("pending");
+
+  // The write. In an effect rather than behind a button: a round the player
+  // spoke and answered is theirs, and it used to be kept only if they
+  // remembered to press "Save round" on the next screen — which the profile
+  // screen then counted, or did not.
+  useEffect(() => {
+    if (!isFinished(round)) {
+      // No round to write. In a real round there is always one; the only way
+      // here without one is the __DEV__ shortcut on Home.
+      setOutcome("unsaved");
+      return;
+    }
+
+    let cancelled = false;
+
+    saveSpeechSession(round, userId, points)
+      .then(() => {
+        if (cancelled) return;
+        // So the round cannot be written a second time from the result screen.
+        // The upsert would collapse it onto the same row anyway; this is the
+        // cheaper half of that guarantee.
+        clear();
+        setOutcome("stored");
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        // The round stays in memory, so the result screen can still offer the
+        // write as a button. Losing the round needs leaving that screen.
+        console.warn("[round] could not be saved:", error);
+        toast.show("Couldn't save your round — try again");
+        setOutcome("unsaved");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [round, userId, points, clear, toast]);
 
   useEffect(() => {
     // React Native has no animated Text content, so the value is listened to
     // and rounded — a re-render only on the frames where the number changes.
     const id = progress.addListener(({ value }) => {
       const next = Math.round(value * 100);
-      setPercent((current) => (current === next ? current : next));
+      setShown((current) => (current === next ? current : next));
     });
 
     return () => progress.removeListener(id);
@@ -87,36 +120,46 @@ export default function Analyzing() {
 
   useEffect(() => {
     const run = Animated.timing(progress, {
-      toValue: 1,
-      duration: reduceMotion ? RUN_REDUCED_MS : RUN_MS,
-      // Linear: the steps are evenly spaced, and an eased bar would make them
-      // fire at visibly uneven moments.
-      easing: Easing.linear,
+      // The arc fills to the score rather than all the way round, so the ring
+      // and the number in it say the same thing.
+      toValue: points / 100,
+      duration: reduceMotion ? COUNT_REDUCED_MS : COUNT_MS,
+      // Eased out: a result lands, it does not arrive at constant speed.
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     });
 
     run.start(({ finished }) => {
-      if (!finished) return;
-
-      // replace, not push: an analysis that is over is not somewhere to come
-      // back to, and the result must not be reachable by going back to a
-      // progress bar at 100%.
-      router.replace({
-        pathname: "/quiz-result",
-        params: { topicId, title, results, picks, seconds },
-      });
+      if (finished) setCounted(true);
     });
 
     return () => run.stop();
-  }, [progress, reduceMotion, router, topicId, title, results, picks, seconds]);
+  }, [progress, points, reduceMotion]);
 
-  if (!title || !results) {
+  useEffect(() => {
+    // Both have to be done: the count is the floor, the write is the reason.
+    // A write that outlasts the count holds the screen at the score, which is
+    // the wait being shown rather than padded.
+    if (!counted || outcome === "pending") return;
+
+    // replace, not push: a round that is over is not somewhere to come back to,
+    // and the result must not be reachable by going back to a full ring.
+    router.replace({
+      pathname: "/quiz-result",
+      params: {
+        topicId,
+        title,
+        results,
+        picks,
+        seconds,
+        saved: outcome === "stored" ? "1" : "0",
+      },
+    });
+  }, [counted, outcome, router, topicId, title, results, picks, seconds]);
+
+  if (!title || outcomes.length === 0) {
     return <Redirect href="/home" />;
   }
-
-  // Four steps over the run, the last one holding through the end rather than
-  // ticking over to a fifth that does not exist.
-  const step = Math.min(STEPS.length - 1, Math.floor((percent / 100) * STEPS.length));
 
   return (
     <View
@@ -125,7 +168,7 @@ export default function Analyzing() {
     >
       <View className="items-center gap-2.5">
         <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-faint">
-          Analyzing
+          Scoring
         </Text>
         <Text className="text-center text-h1 font-sans-extrabold text-text">
           {title}
@@ -136,68 +179,35 @@ export default function Analyzing() {
         <ProgressRing
           size={RING_SIZE}
           stroke={RING_STROKE}
-          progress={percent / 100}
+          progress={progress}
           color={colors.accent.light}
         >
           <View className="items-center gap-1.5">
             <Text
               className="text-timer font-sans-extrabold text-text"
               style={{ fontVariant: ["tabular-nums"] }}
-              // Read out as it changes would be a stream of numbers; the step
-              // rows below are the useful thing to hear.
-              accessibilityElementsHidden
+              // Read out once it has settled rather than counted aloud: the
+              // label below names it, so the number needs no sentence of its own.
+              accessibilityLabel={`${points} points`}
             >
-              {percent}%
+              {shown}
             </Text>
             <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-faint">
-              Analysis
+              Points
             </Text>
           </View>
         </ProgressRing>
       </View>
 
-      {/* Divider rows rather than cards, per design §5: a list that is scanned
-          gets hairlines, not filled boxes. */}
-      <View accessibilityLiveRegion="polite">
-        {STEPS.map((entry, index) => {
-          const active = index === step;
-          const done = index < step;
-
-          return (
-            <View
-              key={entry.label}
-              className="flex-row items-center gap-3 border-t border-divider py-3.5"
-            >
-              <View
-                className={`h-1.5 w-1.5 rounded-full ${
-                  active
-                    ? "bg-accent-light"
-                    : done
-                      ? "bg-text-muted"
-                      : "bg-track"
-                }`}
-              />
-              <Text
-                className={`flex-1 text-h4 ${
-                  active
-                    ? "font-sans-bold text-text"
-                    : done
-                      ? "font-sans text-text-muted"
-                      : "font-sans text-text-disabled"
-                }`}
-              >
-                {entry.label}
-              </Text>
-              <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-disabled">
-                {entry.meta}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-
-      <Text className="mt-6 text-center text-caption font-sans text-text-muted">
-        {STEPS[step].status}
+      <Text
+        className="text-center text-caption font-sans text-text-muted"
+        accessibilityLiveRegion="polite"
+      >
+        {outcome === "pending"
+          ? "Saving your round."
+          : outcome === "stored"
+            ? "Round saved."
+            : "Round not saved."}
       </Text>
     </View>
   );
