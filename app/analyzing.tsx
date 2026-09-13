@@ -3,17 +3,15 @@ import { Animated, Easing, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
-import { ProgressRing } from "../components/ui/ProgressRing";
 import { useUserId } from "../lib/auth-context";
 import { parseOutcomes, scoreFromOutcomes } from "../lib/quiz-score";
 import { useRoundSession } from "../lib/round-session";
 import { isFinished, saveSpeechSession } from "../lib/speech-sessions";
 import { useToast } from "../lib/toast-context";
 import { useReduceMotion } from "../lib/use-reduce-motion";
-import { colors } from "../theme/colors";
 
 // The beat between the last answer and the result, drawn from the "Analyzing"
-// mockup: a ring counting up and a line saying what is happening.
+// mockup: a number counting up and a line saying what is happening.
 //
 // It used to claim four things — transcribing the recording, measuring delivery,
 // checking facts against sources, writing feedback — and do none of them. There
@@ -25,20 +23,17 @@ import { colors } from "../theme/colors";
 // result, and it is this screen that now waits for it: the round is written to
 // `speech_sessions`. A list of one is not a list, so the list is gone.
 //
-// The ring counts the player's score instead of a percentage. A percentage over
-// a network write of unknown length is a different kind of lie — nothing can
-// know it is 43% done — while the score is a real number that is already
-// settled, and the count gives the write a floor to finish inside.
+// What is left is the number counting up. There is deliberately no ring around
+// it: an arc over a network write of unknown length is a lie — nothing can know
+// it is 43% done — and drawing the arc to the score instead made it a decoration
+// on a number that was already legible. The count itself stays, because the
+// score arriving is the point of the screen, and it gives the write a floor to
+// finish inside.
 const COUNT_MS = 1400;
 
 // Reduced motion still gets the count — the number arriving is the point of the
 // screen — but it is over in a beat rather than held.
 const COUNT_REDUCED_MS = 400;
-
-const RING_SIZE = 230;
-// The thin ring of design §12, where the speaking timer takes the 8px one. This
-// screen is about the number in the middle, not the arc around it.
-const RING_STROKE = 3;
 
 // `pending` until the write answers. Both other outcomes leave this screen; the
 // difference is whether `quiz-result` still has to offer a retry.
@@ -51,6 +46,15 @@ export default function Analyzing() {
   const toast = useToast();
   const userId = useUserId();
   const { round, clear } = useRoundSession();
+
+  // The round as it stood when this screen mounted, held still for the write
+  // below. It has to be a ref: the write clears the session on success, so an
+  // effect that depended on `round` would re-run against an empty one, find
+  // nothing to save, and mark the round it had just written as unsaved — the
+  // success undoing itself, and the result screen then offering a retry it had
+  // no round left to make. One mount is one round here (both the way in and the
+  // way out are `router.replace`), so reading it once is the whole guarantee.
+  const roundRef = useRef(round);
 
   // Everything the result screen needs, carried through untouched. This screen
   // reads the title and the marks; the rest it only passes on.
@@ -75,7 +79,9 @@ export default function Analyzing() {
   // remembered to press "Save round" on the next screen — which the profile
   // screen then counted, or did not.
   useEffect(() => {
-    if (!isFinished(round)) {
+    const started = roundRef.current;
+
+    if (!isFinished(started)) {
       // No round to write. In a real round there is always one; the only way
       // here without one is the __DEV__ shortcut on Home.
       setOutcome("unsaved");
@@ -84,7 +90,7 @@ export default function Analyzing() {
 
     let cancelled = false;
 
-    saveSpeechSession(round, userId, points)
+    saveSpeechSession(started, userId, points)
       .then(() => {
         if (cancelled) return;
         // So the round cannot be written a second time from the result screen.
@@ -105,13 +111,13 @@ export default function Analyzing() {
     return () => {
       cancelled = true;
     };
-  }, [round, userId, points, clear, toast]);
+  }, [userId, points, clear, toast]);
 
   useEffect(() => {
     // React Native has no animated Text content, so the value is listened to
     // and rounded — a re-render only on the frames where the number changes.
     const id = progress.addListener(({ value }) => {
-      const next = Math.round(value * 100);
+      const next = Math.round(value);
       setShown((current) => (current === next ? current : next));
     });
 
@@ -120,9 +126,9 @@ export default function Analyzing() {
 
   useEffect(() => {
     const run = Animated.timing(progress, {
-      // The arc fills to the score rather than all the way round, so the ring
-      // and the number in it say the same thing.
-      toValue: points / 100,
+      // Straight to the score: with the ring gone there is no 0–1 arc to drive,
+      // so the value counts in points rather than in a fraction of them.
+      toValue: points,
       duration: reduceMotion ? COUNT_REDUCED_MS : COUNT_MS,
       // Eased out: a result lands, it does not arrive at constant speed.
       easing: Easing.out(Easing.cubic),
@@ -176,27 +182,20 @@ export default function Analyzing() {
       </View>
 
       <View className="flex-1 items-center justify-center">
-        <ProgressRing
-          size={RING_SIZE}
-          stroke={RING_STROKE}
-          progress={progress}
-          color={colors.accent.light}
-        >
-          <View className="items-center gap-1.5">
-            <Text
-              className="text-timer font-sans-extrabold text-text"
-              style={{ fontVariant: ["tabular-nums"] }}
-              // Read out once it has settled rather than counted aloud: the
-              // label below names it, so the number needs no sentence of its own.
-              accessibilityLabel={`${points} points`}
-            >
-              {shown}
-            </Text>
-            <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-faint">
-              Points
-            </Text>
-          </View>
-        </ProgressRing>
+        <View className="items-center gap-1.5">
+          <Text
+            className="text-timer font-sans-extrabold text-text"
+            style={{ fontVariant: ["tabular-nums"] }}
+            // Read out once it has settled rather than counted aloud: the label
+            // below names it, so the number needs no sentence of its own.
+            accessibilityLabel={`${points} points`}
+          >
+            {shown}
+          </Text>
+          <Text className="text-eyebrow font-sans-extrabold uppercase tracking-pill text-text-faint">
+            Points
+          </Text>
+        </View>
       </View>
 
       <Text
