@@ -8,6 +8,37 @@ import { supabase } from "./supabase";
 // `lib/onboarding-storage.ts` for the other half.
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
+// What the profile screen renders. `id` is deliberately not selected — the
+// caller already has the user id to ask with, and a row that carries it again
+// only invites someone to trust the copy instead of the session.
+export type Profile = Pick<
+  ProfileRow,
+  "display_name" | "country_code" | "birth_date" | "created_at"
+>;
+
+const PROFILE_COLUMNS =
+  "display_name, country_code, birth_date, created_at" as const;
+
+export async function fetchProfile(userId: string): Promise<Profile | null> {
+  // `maybeSingle`, not `single`: the signup trigger guarantees the row exists,
+  // and `single` would turn its absence into an error. The one thing that can
+  // still hide it is RLS — a session that expired between mounting and reading —
+  // and for that, null is the truthful answer rather than a crash.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLUMNS)
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load profile: ${error.message}`);
+  }
+
+  return data;
+}
+
 // Update, never insert. The row already exists: a trigger on auth.users creates
 // it in the same transaction as the signup, so a client that crashes mid-flow
 // can never leave a user without one. RLS agrees — profiles has a select and an
