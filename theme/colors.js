@@ -120,6 +120,17 @@ const colors = {
     "wrong-wash": "rgba(255,59,48,0.12)",
   },
 
+  // The three podium places on the leaderboard, and nowhere else (design §1).
+  // Scoped the way `streak` and `result` are: these are the only three hues in
+  // the app besides the accent, and they are readable precisely because they
+  // appear on exactly one screen. Second place is the accent itself, which is
+  // why the podium does not introduce a third blue.
+  podium: {
+    first: "#8459ea",
+    second: "#1b5ba7",
+    third: "#d76711",
+  },
+
   // status
   error: "#df4f4f",
   danger: {
