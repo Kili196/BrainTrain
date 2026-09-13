@@ -74,6 +74,11 @@ const colors = {
     // the rim of a selected onboarding country row — same idea as `selected`
     // above, but white rather than accent-tinted (design §6 "checkbox").
     selectedSoft: "rgba(255,255,255,0.45)",
+
+    // the dashed rim of an empty-state placeholder (design §1 "border-empty").
+    // Brighter than any other hairline on purpose: it has to read as a slot
+    // waiting to be filled rather than as the edge of something.
+    empty: "rgba(255,255,255,0.16)",
   },
 
   // stepper and icon-button fills (design §1 "inactive-fill")
