@@ -116,11 +116,17 @@ Topics are wired end to end; auth and saving a round are the two pieces still st
   before any screen mounts and kept in the Keychain / encrypted shared preferences
   through `lib/secure-store-adapter.ts`. Without a session `auth.uid()` is null and
   RLS keeps `speech_sessions` shut, so the gate is what makes saving possible at all.
-- A finished round is **written for real**: `lib/round-session.tsx` carries it from the
-  draw to the result screen, and `lib/speech-sessions.ts` upserts it — topic, start,
-  spoken duration, quiz score and the on-device transcript.
-- Still faked: the "analyzing" step between the last answer and the result
-  (`app/analyzing.tsx`) is a timer with labels on it. Nothing is analysed yet.
+- A finished round is **written for real**, and automatically:
+  `lib/round-session.tsx` carries it from the draw to `app/analyzing.tsx`, which
+  upserts it through `lib/speech-sessions.ts` — topic, start, spoken duration, quiz
+  score and the on-device transcript — while it counts the score into its ring. A
+  write that fails leaves the round in memory and `quiz-result.tsx` offers it as a
+  button.
+- **No AI, by decision.** The MVP scores a round by its five questions and nothing
+  else: the speaking half produces a duration and a transcript, and nothing grades
+  it. `app/analyzing.tsx` used to claim otherwise — transcribing, measuring delivery,
+  checking facts against sources — and did none of it; it now says only what it does.
+  The transcript is stored so an analysis stays possible later.
 - The **microphone needs a custom dev build** — `expo-speech-recognition` is a native
   module and is not in Expo Go. The app itself runs in Expo Go; the recording screen
   says so in place of a transcript, and the round then saves with `transcript` null.

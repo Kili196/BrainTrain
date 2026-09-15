@@ -56,9 +56,11 @@ module.exports = {
         // large figures — the prep/speak tiles, profile points. Always paired
         // with fontVariant tabular-nums (design §2).
         stat: ["30px", { lineHeight: "32px" }],
-        // the countdown inside the 230px timer ring (design §12). Bigger than
-        // `stat`, which belongs to the 118px score ring — the number is scaled
-        // to the ring it sits in.
+        // the countdown inside the 230px timer ring (design §12), and the score
+        // on the scoring screen, which is a lone number holding the same space
+        // the ring used to. Bigger than `stat`, which belongs to the 118px score
+        // ring — that number is scaled to the ring it sits in, these two are
+        // scaled to the screen.
         timer: ["44px", { lineHeight: "48px" }],
         // counters and chips — design §2 "Caption"
         caption: ["11px", { lineHeight: "14px" }],
