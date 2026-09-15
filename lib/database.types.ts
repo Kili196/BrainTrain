@@ -232,6 +232,16 @@ export type Database = {
         }
       }
       delete_own_account: { Args: never; Returns: undefined }
+      leaderboard: {
+        Args: { top_n?: number }
+        Returns: {
+          country_code: string
+          display_name: string
+          is_you: boolean
+          place: number
+          points: number
+        }[]
+      }
       random_topics: {
         Args: { p_category?: string; p_count?: number }
         Returns: {
