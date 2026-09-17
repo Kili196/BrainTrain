@@ -69,13 +69,32 @@ export async function saveSpeechSession(
 // rows are a handful. The day that stops being true — a leaderboard across
 // everyone, or a player with thousands of rounds — this belongs in an RPC that
 // groups server-side, not in a larger select.
+// Two rounds before a category is ranked at all. One round is a coin toss: a
+// single lucky 100% would outrank ten rounds at 80% and the screen would call
+// that the player's strongest field. Categories under the bar keep their place
+// in the list — they are still something the player has done — but they sit
+// below the ranked ones and say how far off they are instead of showing a
+// percentage that means nothing yet.
+export const MIN_ROUNDS_TO_RANK = 2;
+
 export type FieldStat = {
   // The raw `topics.category` key, not a label. `categoryName()` turns it into
   // one and survives a category the app has not shipped a name for yet.
   category: string;
-  // Distinct topics, not rounds. Speaking about the same topic twice is
-  // practice rather than breadth, and the design draws this as "12 topics".
-  topicCount: number;
+  // Rounds that actually produced a score. A skipped quiz is null in the table
+  // and says nothing about strength, so it is not counted here — unlike in
+  // `rounds` above, where it still counts as a round that was played.
+  rounds: number;
+  // Mean quiz percentage over those rounds, rounded. It is exactly the player's
+  // per-question hit rate in this category, not an approximation of it: every
+  // topic carries five questions, so every round weighs the same and the mean
+  // of the percentages is the pooled accuracy. If topics ever ship with
+  // different question counts, that stops being true and this needs the
+  // question totals rather than the round scores.
+  accuracy: number;
+  // False while the category is under MIN_ROUNDS_TO_RANK. The screen shows the
+  // shortfall rather than `accuracy`, and the sort keeps these last.
+  ranked: boolean;
 };
 
 export type RoundStats = {
@@ -83,7 +102,8 @@ export type RoundStats = {
   // Every round's quiz percentage, summed. A skipped quiz is null in the table
   // and worth 0 here: it cost the player nothing, it just earned nothing.
   points: number;
-  // Strongest first, and only categories the player has actually spoken about.
+  // Most accurate first, and only categories the player has actually spoken
+  // about. Categories with too few rounds to judge come last — see `ranked`.
   fields: FieldStat[];
 };
 
@@ -104,9 +124,9 @@ export async function fetchRoundStats(userId: string): Promise<RoundStats> {
 
   const sessions = data ?? [];
 
-  // A Set per category rather than a counter, because the question is how many
-  // *different* topics were spoken about.
-  const topicsByCategory = new Map<string, Set<string>>();
+  // Scores per category, kept as a running total rather than a list: the mean
+  // is the only thing anyone asks for afterwards.
+  const scoresByCategory = new Map<string, { rounds: number; total: number }>();
 
   for (const session of sessions) {
     // `topic_id` is nullable — a round whose topic has been unpublished or
@@ -116,13 +136,22 @@ export async function fetchRoundStats(userId: string): Promise<RoundStats> {
     const category = session.topics?.category;
     if (!category || !session.topic_id) continue;
 
-    const seen = topicsByCategory.get(category) ?? new Set<string>();
-    seen.add(session.topic_id);
-    topicsByCategory.set(category, seen);
+    // A quiz that was never answered has no opinion about this category.
+    if (session.quiz_score === null) continue;
+
+    const seen = scoresByCategory.get(category) ?? { rounds: 0, total: 0 };
+    seen.rounds += 1;
+    seen.total += session.quiz_score;
+    scoresByCategory.set(category, seen);
   }
 
-  const fields = [...topicsByCategory.entries()]
-    .map(([category, topics]) => ({ category, topicCount: topics.size }))
+  const fields = [...scoresByCategory.entries()]
+    .map(([category, { rounds, total }]) => ({
+      category,
+      rounds,
+      accuracy: Math.round(total / rounds),
+      ranked: rounds >= MIN_ROUNDS_TO_RANK,
+    }))
     .sort(strongestFirst);
 
   return {
@@ -132,12 +161,23 @@ export async function fetchRoundStats(userId: string): Promise<RoundStats> {
   };
 }
 
-// Most topics first. Ties fall back to the order the categories are authored in,
-// because Postgres promises nothing about row order — without a tie-break, two
-// categories on the same count would swap places between two visits to the
-// screen for no visible reason.
+// Ranked categories first, most accurate at the top. Everything under
+// MIN_ROUNDS_TO_RANK sits below them regardless of how well it scored, which is
+// the whole point of the bar: an unjudged category must not be able to lead the
+// list.
+//
+// Two accuracies that are equal are broken by rounds played — the same 80% over
+// five rounds is better evidence than over two — and only then by the order the
+// categories are authored in. That last tie-break matters because Postgres
+// promises nothing about row order: without it, two categories that match on
+// both counts would swap places between visits to the screen for no visible
+// reason.
 function strongestFirst(a: FieldStat, b: FieldStat): number {
-  if (a.topicCount !== b.topicCount) return b.topicCount - a.topicCount;
+  if (a.ranked !== b.ranked) return a.ranked ? -1 : 1;
+
+  if (a.ranked && a.accuracy !== b.accuracy) return b.accuracy - a.accuracy;
+  if (a.rounds !== b.rounds) return b.rounds - a.rounds;
+
   return contentOrder(a.category) - contentOrder(b.category);
 }
 

@@ -248,10 +248,20 @@ function FieldRow({ field }: { field: FieldStat }) {
         className="text-caption font-sans text-text-muted"
         style={{ fontVariant: ["tabular-nums"] }}
       >
-        {field.topicCount === 1 ? "1 topic" : `${field.topicCount} topics`}
+        {field.ranked
+          ? `${field.accuracy}% · ${roundsLabel(field.rounds)}`
+          : // The shortfall rather than a percentage: one round is not yet an
+            // answer to "how strong am I here", and printing one would invite
+            // the player to believe it. Words, not a dimmed colour — design §14
+            // forbids colour as the only carrier of meaning.
+            `${roundsLabel(field.rounds)} so far`}
       </Text>
     </View>
   );
+}
+
+function roundsLabel(rounds: number): string {
+  return rounds === 1 ? "1 round" : `${rounds} rounds`;
 }
 
 // Design §12: an empty state mirrors the real layout instead of replacing it,
