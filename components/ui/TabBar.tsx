@@ -76,7 +76,7 @@ export function TabBar() {
           <TabItem
             key={tab.href}
             tab={tab}
-            active={pathname === tab.href}
+            active={activeHref(pathname) === tab.href}
             onPress={() => router.navigate(tab.href)}
           />
         ))}
@@ -213,6 +213,17 @@ function NetGlyph({ color }: { color: string }) {
 
 function SettingsGlyph({ color }: { color: string }) {
   return <GearIcon size={17} color={color} />;
+}
+
+// Routes that sit in the tab group without a tab of their own. Without this the
+// comparison below would match nothing and the bar would go dark on a screen
+// that is plainly part of one branch of the app.
+const BRANCH_OF: Record<string, string> = {
+  "/achievements": "/profile",
+};
+
+function activeHref(pathname: string): string {
+  return BRANCH_OF[pathname] ?? pathname;
 }
 
 const TABS: Tab[] = [
