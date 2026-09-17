@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 
 import { StreakFlame } from "./StreakFlame";
 
@@ -15,6 +16,8 @@ export type HomeHeaderProps = {
 };
 
 export function HomeHeader({ streakDays, hasNewChallenge }: HomeHeaderProps) {
+  const router = useRouter();
+
   return (
     <View className="gap-6 border-b border-divider pb-6">
       {/* Two colours in one line of text, so it stays one word: BRAIN in
@@ -29,7 +32,10 @@ export function HomeHeader({ streakDays, hasNewChallenge }: HomeHeaderProps) {
 
       <View className="flex-row items-center">
         <View className="flex-1 items-start">
-          <NavLabel label="Achievements" />
+          <NavLabel
+            label="Achievements"
+            onPress={() => router.navigate("/achievements")}
+          />
         </View>
 
         <View className="flex-1 items-center">
@@ -44,13 +50,21 @@ export function HomeHeader({ streakDays, hasNewChallenge }: HomeHeaderProps) {
   );
 }
 
-function NavLabel({ label, marked = false }: { label: string; marked?: boolean }) {
+function NavLabel({
+  label,
+  marked = false,
+  onPress,
+}: {
+  label: string;
+  marked?: boolean;
+  onPress?: () => void;
+}) {
   return (
     <Pressable
-      // Neither screen exists yet. Same call as START on the round: the control
-      // is drawn in full and waits, rather than navigating somewhere that isn't
-      // there.
-      onPress={() => {}}
+      // Challenges does not exist yet, and a label without an `onPress` is the
+      // same call as START on the round: the control is drawn in full and
+      // waits, rather than navigating somewhere that isn't there.
+      onPress={onPress ?? (() => {})}
       accessibilityRole="button"
       // The dot is decoration for anyone who can see it; for anyone who cannot,
       // the label has to carry the same information.

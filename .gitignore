@@ -87,3 +87,12 @@ Thumbs.db
 # Local Claude Code settings (keep shared config, ignore personal overrides)
 # ------------------------------------------------------------
 .claude/settings.local.json
+
+# ------------------------------------------------------------
+# Design mockups (the .dc.html screens + their specs)
+#
+# Kept on disk so a screen can be rebuilt against its own source instead of a
+# screenshot, but not committed: 4.7 MB of handoff export, none of which the app
+# imports. Ask Fabian for the latest handoff zip if the folder is missing.
+# ------------------------------------------------------------
+mockups/

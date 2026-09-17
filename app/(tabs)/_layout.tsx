@@ -60,6 +60,10 @@ export default function MainTabsLayout() {
           initialRouteName="home"
         >
           <Tabs.Screen name="profile" />
+          {/* No tab of its own — it is reached from the Home header and keeps
+              Profile lit while it is open. Listed here so the navigator knows
+              it belongs to this group, which is what lends it the tab bar. */}
+          <Tabs.Screen name="achievements" />
           <Tabs.Screen name="ranking" />
           <Tabs.Screen name="home" />
           <Tabs.Screen name="knowledge" />
