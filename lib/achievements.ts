@@ -352,6 +352,41 @@ function measure(input: AchievementInput): Measurements {
   return { values, streakDays: currentRun(playedDays, input.now) };
 }
 
+// The streak on its own, for a screen that wants the flame and nothing else.
+// One column of one table: the Home header used to render a placeholder because
+// there was no cheap way to ask this, and a full `fetchAchievements` — three
+// reads and 24 measurements — would be a heavy way to answer "how many days".
+export async function fetchStreakDays(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("speech_sessions")
+    .select("started_at")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to load the streak: ${error.message}`);
+  }
+
+  return currentStreakDays(
+    (data ?? []).map((row) => row.started_at),
+    new Date()
+  );
+}
+
+// The same streak, for callers that hold round timestamps and nothing else —
+// the Knowledge screen, which carries the Home header and so has a flame to
+// put a number under. Exported rather than reimplemented there: two copies of
+// "does yesterday still count" would be one edit away from a flame that reads
+// differently on two tabs.
+export function currentStreakDays(
+  startedAt: readonly string[],
+  now: Date
+): number {
+  return currentRun(
+    startedAt.map((stamp) => localDay(new Date(stamp))),
+    now
+  );
+}
+
 // The streak as it stands right now: the days counted back from the most recent
 // one, but only if that day is today or yesterday.
 //
