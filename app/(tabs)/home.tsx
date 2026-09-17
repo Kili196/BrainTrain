@@ -20,10 +20,7 @@ import {
   type GameSettings,
 } from "../../lib/game-settings";
 import type { CategoryKey } from "../../constants/categories";
-import {
-  PLACEHOLDER_HAS_NEW_CHALLENGE,
-  PLACEHOLDER_STREAK_DAYS,
-} from "../../constants/placeholders";
+import { PLACEHOLDER_HAS_NEW_CHALLENGE } from "../../constants/placeholders";
 import {
   hasSeenDailyTopic,
   markDailyTopicSeen,
@@ -31,6 +28,7 @@ import {
 import { clearOnboarding } from "../../lib/onboarding-storage";
 import { useRoundSession } from "../../lib/round-session";
 import { useRoundStart } from "../../lib/round-start-context";
+import { useStreakDays } from "../../lib/use-streak-days";
 import {
   fetchDailyTopic,
   fetchRandomTopic,
@@ -68,6 +66,10 @@ export default function Home() {
   // the OS hands us. The star field starts there — see below.
   const [headerBottom, setHeaderBottom] = useState(0);
 
+  // The real streak, read on focus. It used to be a constant in
+  // `constants/placeholders.ts`; the rounds can answer this now.
+  const streakDays = useStreakDays();
+
   const { topic, title, isDrawing, error, draw } = useTopicDraw(backdrop);
 
   // Owned by the tab layout, because the black layer has to cover the tab bar
@@ -93,10 +95,22 @@ export default function Home() {
   // opened on this device.
   const [isDailyUnseen, setDailyUnseen] = useState(false);
 
+  // Today's topic, shown on the stage before anything has been drawn. The
+  // stage used to rest on the words "Your topic", which named the slot
+  // rather than filling it — the one topic everybody shares is a better
+  // thing to open on, and it is a reason to press PLAY instead of a label.
+  const [dailyTitle, setDailyTitle] = useState<string | null>(null);
+
   useEffect(() => {
     loadGameSettings().then(setSettings);
 
     hasSeenDailyTopic().then((seen) => setDailyUnseen(!seen));
+
+    fetchDailyTopic()
+      .then((daily) => setDailyTitle(daily?.title ?? null))
+      // No daily topic and no stage label is the same screen as before this
+      // existed, so there is nothing to report.
+      .catch(() => setDailyTitle(null));
 
     // Twice as many as the ring needs, keeping the shortest half.
     //
@@ -270,7 +284,7 @@ export default function Home() {
             }}
           >
             <HomeHeader
-              streakDays={PLACEHOLDER_STREAK_DAYS}
+              streakDays={streakDays}
               hasNewChallenge={PLACEHOLDER_HAS_NEW_CHALLENGE}
             />
           </View>
@@ -291,7 +305,7 @@ export default function Home() {
           {/* The topic lives inside the ring, not beside it — the ring is the
               drag surface, and touches only ever travel up the tree. */}
           <TopicOrbit titles={backdrop} locked={isDrawing}>
-            <StageTopic title={title ?? "Your topic"} />
+            <StageTopic title={title ?? dailyTitle ?? "Your topic"} />
           </TopicOrbit>
 
           {/* Caption under the stage. Fixed height so landing a draw cannot shift
