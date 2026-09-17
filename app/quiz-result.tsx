@@ -9,6 +9,11 @@ import { BobbingDots } from "../components/ui/BobbingDots";
 import { Button } from "../components/ui/Button";
 import { useUserId } from "../lib/auth-context";
 import { formatDuration } from "../lib/game-settings";
+import {
+  parseOutcomes,
+  scoreFromOutcomes,
+  TOTAL_POINTS,
+} from "../lib/quiz-score";
 import { useRoundSession } from "../lib/round-session";
 import { isFinished, saveSpeechSession } from "../lib/speech-sessions";
 import { useToast } from "../lib/toast-context";
@@ -20,13 +25,15 @@ import { colors } from "../theme/colors";
 // score out of 100, a chip per question, two figures, and the explanations for
 // what went wrong.
 //
-// Points rather than a fraction — 100 spread over the round, so five questions
-// are worth 20 each. The mockup counts ten questions at ten points; the
-// database has five per topic and that is what the round asks.
+// The score rule lives in `lib/quiz-score.ts`, because `analyzing` counts the
+// same number into its ring on the way here and two copies of it would be one
+// rounding difference away from a score that changes between two screens of
+// the same round.
 //
-// This is where a round is written to the database, and the only place that
-// happens. Everything before it is in memory.
-const TOTAL_POINTS = 100;
+// The round is no longer written here. `analyzing` writes it while it counts,
+// so a round the player spoke and answered is kept whether or not they think
+// to press a button. What is left here is the retry for a write that failed on
+// the way, which is why the save effect below still exists.
 
 // The number counts up rather than appearing: an arriving figure is a result
 // being counted out, a printed one is just a label. Same curve the ring had.
@@ -45,20 +52,26 @@ export default function QuizResult() {
   const userId = useUserId();
   const { round, clear } = useRoundSession();
 
-  const { title, topicId, results, picks, seconds } = useLocalSearchParams<{
-    title?: string;
-    topicId?: string;
-    results?: string;
-    picks?: string;
-    seconds?: string;
-  }>();
+  const { title, topicId, results, picks, seconds, saved } =
+    useLocalSearchParams<{
+      title?: string;
+      topicId?: string;
+      results?: string;
+      picks?: string;
+      seconds?: string;
+      // "1" when `analyzing` already wrote the round. Anything else — a
+      // failed write, or a deep link straight to this screen — leaves the
+      // write on offer as a button.
+      saved?: string;
+    }>();
 
-  // "10110" — one character per question. The screen is deep-linkable, so
-  // anything that is not a run of 0s and 1s is treated as no round at all.
-  const outcomes = (results ?? "").split("").filter((mark) => mark === "0" || mark === "1");
+  const stored = saved === "1";
+
+  // "10110" — one character per question.
+  const outcomes = parseOutcomes(results);
   const correct = outcomes.filter((mark) => mark === "1").length;
   const total = outcomes.length;
-  const points = total > 0 ? Math.round((correct / total) * TOTAL_POINTS) : 0;
+  const points = scoreFromOutcomes(outcomes);
 
   // "0.2|1|3" — what was chosen per question, only needed once a chip is
   // tapped. A missing entry is an empty pick rather than a broken screen.
@@ -346,35 +359,46 @@ export default function QuizResult() {
       </ScrollView>
 
       {/* The mockup leaves by the tab bar; this screen has none, so it carries
-          its own way out — under the save while there is still something to
-          save, and as the only action once there is not. */}
+          its own way out. */}
       <View
         className="gap-3.5 px-6 pt-4"
         style={{ paddingBottom: insets.bottom + 30 }}
       >
-        {/* Disabled rather than hidden when there is no round to write: in a
-            real round there always is one, and the only way here without one is
-            the __DEV__ shortcut on Home. Muted, per design §4 — a dimmed blue
-            button still reads as the thing to press. */}
-        <Button
-          label="Save round"
-          onPress={() => setSaving(true)}
-          disabled={!isFinished(round)}
-          disabledStyle="muted"
-        />
+        {stored ? (
+          // Already in the database — `analyzing` wrote it before this screen
+          // mounted. One way out, and it is the primary action, because there
+          // is nothing else left to do here.
+          <Button label="Done" onPress={() => router.replace("/home")} />
+        ) : (
+          <>
+            {/* The write failed on the way here, or there was never a round to
+                write — the __DEV__ shortcut on Home. Either way the round is
+                still in memory, so the retry is a button rather than a lost
+                round. Disabled rather than hidden, and muted per design §4,
+                because a dimmed blue button still reads as the thing to
+                press. */}
+            <Button
+              label="Save round"
+              onPress={() => setSaving(true)}
+              disabled={!isFinished(round)}
+              disabledStyle="muted"
+            />
 
-        {/* Ghost, per design §4: one filled button to a screen, and leaving
-            without saving should not look like the thing to do. */}
-        <Pressable
-          onPress={() => router.replace("/home")}
-          accessibilityRole="button"
-          accessibilityLabel="Back to home without saving"
-          className="items-center py-1"
-        >
-          <Text className="text-body font-sans-bold text-text-muted">
-            Back to home
-          </Text>
-        </Pressable>
+            {/* Ghost, per design §4: one filled button to a screen, and leaving
+                with the round still unsaved should not look like the thing to
+                do. */}
+            <Pressable
+              onPress={() => router.replace("/home")}
+              accessibilityRole="button"
+              accessibilityLabel="Back to home without saving"
+              className="items-center py-1"
+            >
+              <Text className="text-body font-sans-bold text-text-muted">
+                Back to home
+              </Text>
+            </Pressable>
+          </>
+        )}
       </View>
 
       <QuestionReviewSheet

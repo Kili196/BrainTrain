@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
       <ScreenIntro
         eyebrow="BrainTrain"
         title="Say what you know, out loud."
-        body="You get a topic, a few minutes to think, and one shot at explaining it. The AI listens, checks your facts and tells you where you were vague."
+        body="You get a topic, a few minutes to think, and one shot at explaining it. Then five questions decide how well you actually knew it."
       />
     </OnboardingScreen>
   );
