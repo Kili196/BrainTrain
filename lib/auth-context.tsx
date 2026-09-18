@@ -13,6 +13,7 @@ import { AppState } from "react-native";
 import { isAuthApiError } from "@supabase/supabase-js";
 
 import { StartupError } from "../components/ui/StartupError";
+import { clearOnboarding } from "./onboarding-storage";
 import { supabase } from "./supabase";
 
 // The account, established once at startup and held for the whole app.
@@ -46,6 +47,11 @@ export type AuthApi = {
   status: AuthStatus;
   // Null only while loading or after a failure; inside the app it is always set.
   userId: string | null;
+  // Deletes the account in the database and leaves the app with a brand-new
+  // anonymous one. Throws only when the deletion itself failed, in which case
+  // nothing has changed and the caller can offer it again — see the comment on
+  // the implementation for why the two halves are reported differently.
+  deleteAccount: () => Promise<void>;
 };
 
 const Context = createContext<AuthApi | null>(null);
@@ -91,6 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Until the first attempt has answered, it owns `userId` — see the listener.
   const settled = useRef(false);
 
+  // True while an account is being swapped for a fresh one. The listener below
+  // has to ignore the sign-out that happens in the middle of it: `userId` going
+  // null would make `useUserId()` throw in every screen still on the stack, and
+  // dropping `status` back to loading would unmount the tree the delete was
+  // started from. The old id stays until the new one is there.
+  const resetting = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -128,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // either side of the sign-in above. Ignoring it until the first attempt
       // has answered keeps a null initial session from wiping a fresh id.
       if (!settled.current) return;
+      if (resetting.current) return;
 
       setUserId(session?.user.id ?? null);
     });
@@ -154,7 +168,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.remove();
   }, []);
 
-  const api = useMemo<AuthApi>(() => ({ status, userId }), [status, userId]);
+  // Account deletion, required by App Store Guideline 5.1.1(v). Two halves that
+  // fail very differently, which is why only the first one throws:
+  //
+  //   1. The database call. Until it answers, nothing has happened — so a
+  //      failure here is reported to the caller, which keeps the player on the
+  //      settings screen with the row still there to press again.
+  //   2. Becoming a new anonymous player. The account is gone by now, so there
+  //      is nothing to return to and nothing for a screen to offer. A failure
+  //      here goes to the startup screen, which already owns the retry.
+  const deleteAccount = useCallback(async () => {
+    // `delete_own_account` is a definer function that deletes the row in
+    // auth.users; profiles and speech_sessions follow via cascade. It reads
+    // auth.uid() itself, so there is nothing to pass and nothing to get wrong.
+    const { error } = await supabase.rpc("delete_own_account");
+    if (error) throw error;
+
+    resetting.current = true;
+
+    try {
+      // The local profile is the "has onboarded" flag (see
+      // `lib/onboarding-storage.ts`), so clearing it is what sends the player
+      // back into onboarding rather than into a Home screen belonging to an
+      // account that no longer exists.
+      await clearOnboarding();
+
+      // Local scope on purpose: the user row is already gone, so a server-side
+      // logout would be a request signed by a deleted account — and deleting
+      // the user took its refresh tokens with it, so there is nothing left to
+      // revoke. Without this the dead session would still be in SecureStore.
+      await supabase.auth.signOut({ scope: "local" });
+
+      setUserId(await establishSession());
+    } catch (failure) {
+      console.warn("[auth] no new session after deleting the account:", failure);
+      setFailure(describe(failure));
+      setFailedOnce(true);
+      setStatus("error");
+    } finally {
+      resetting.current = false;
+    }
+  }, []);
+
+  const api = useMemo<AuthApi>(
+    () => ({ status, userId, deleteAccount }),
+    [status, userId, deleteAccount]
+  );
 
   if (status === "error" || (status === "loading" && failedOnce)) {
     return (

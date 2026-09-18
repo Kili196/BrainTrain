@@ -56,6 +56,33 @@ export async function saveProfile(
     birth_date: toIsoDate(data.birth),
   };
 
+  await applyUpdate(userId, update);
+}
+
+// The editable half of the profile, changed from `app/edit-profile.tsx`.
+//
+// Name and country only. The birth date is deliberately not here: it is asked
+// once in onboarding and nothing else in the app rewrites it, so an edit screen
+// that offered it would be the only door to a value the leaderboard's age
+// grouping will later depend on.
+export async function updateProfileDetails(
+  userId: string,
+  details: { name: string; countryCode: string }
+): Promise<void> {
+  const update: ProfileUpdate = {
+    // Same rule as onboarding: "" is a name that renders as nothing, null is
+    // the absence of one, and the column is nullable.
+    display_name: details.name.trim() || null,
+    country_code: details.countryCode.toUpperCase(),
+  };
+
+  await applyUpdate(userId, update);
+}
+
+async function applyUpdate(
+  userId: string,
+  update: ProfileUpdate
+): Promise<void> {
   const { data: rows, error } = await supabase
     .from("profiles")
     .update(update)
