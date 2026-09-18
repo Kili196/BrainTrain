@@ -69,6 +69,11 @@ export default function Analyzing() {
   const outcomes = parseOutcomes(results);
   const points = scoreFromOutcomes(outcomes);
 
+  // Whether a round actually arrived through the navigation. Read twice — by
+  // the write effect and by the redirect at the bottom — so that the screen
+  // cannot end up writing a round it is already navigating away from.
+  const hasResult = Boolean(title) && outcomes.length > 0;
+
   const progress = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState(0);
   const [counted, setCounted] = useState(false);
@@ -79,6 +84,13 @@ export default function Analyzing() {
   // remembered to press "Save round" on the next screen — which the profile
   // screen then counted, or did not.
   useEffect(() => {
+    // The redirect at the bottom of this component does not prevent this: a
+    // render that returns `<Redirect>` still commits, so this effect runs on
+    // that mount too. Without this line, opening `/analyzing` as a deep link
+    // with no marks — while a finished round sits in memory — writes that round
+    // at 0 points and clears it. The guard has to be here, not only there.
+    if (!hasResult) return;
+
     const started = roundRef.current;
 
     if (!isFinished(started)) {
@@ -111,7 +123,7 @@ export default function Analyzing() {
     return () => {
       cancelled = true;
     };
-  }, [userId, points, clear, toast]);
+  }, [hasResult, userId, points, clear, toast]);
 
   useEffect(() => {
     // React Native has no animated Text content, so the value is listened to
@@ -163,7 +175,7 @@ export default function Analyzing() {
     });
   }, [counted, outcome, router, topicId, title, results, picks, seconds]);
 
-  if (!title || outcomes.length === 0) {
+  if (!hasResult) {
     return <Redirect href="/home" />;
   }
 
