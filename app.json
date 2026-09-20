@@ -11,6 +11,7 @@
       "bundleIdentifier": "com.braintrain.app"
     },
     "android": {
+      "package": "com.braintrain.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
