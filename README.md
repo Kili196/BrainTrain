@@ -100,6 +100,49 @@ npm run db:seed    # compile supabase/content/topics-v1.md into a seed migration
 To check the link is working: `npx supabase migration list` — local and remote should
 show the same migrations.
 
+## 7. Google sign-in setup *(optional — only needed to test Google/Apple sign-in)*
+
+The login screen's "Continue as guest" works everywhere, including Expo Go. Google
+sign-in needs a **custom dev build** — `@react-native-google-signin/google-signin` is a
+native module and is not in Expo Go, the same way the microphone isn't (§ Project
+status). The button detects Expo Go and disables itself with a short note instead of
+crashing; guest still works there.
+
+To actually sign in with Google on a dev build, both a Google Cloud project and the
+Supabase dashboard need to be told about each other:
+
+1. **Google Cloud Console** → APIs & Services → Credentials → *Create Credentials* →
+   *OAuth client ID*, three times:
+   - **Web application** — no redirect URI needed for this flow. Copy its client ID into
+     `.env` as `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. This is the one Supabase checks the ID
+     token's audience against — see the comment above it in `.env.example`. This is the
+     only one of the three referenced anywhere in the app's code or config.
+   - **iOS** — bundle ID `com.braintrain.app`. Take its client ID, reverse it (e.g.
+     `1234-abc.apps.googleusercontent.com` → `com.googleusercontent.apps.1234-abc`), and
+     paste that into the `iosUrlScheme` TODO in `app.json`'s `@react-native-google-signin/google-signin`
+     plugin config. Without this, iOS never returns control to the app after the sign-in
+     sheet closes.
+   - **Android** — package name `com.braintrain.app`, plus the SHA-1 fingerprint of the
+     signing certificate (get it from `eas credentials`, or `./gradlew signingReport` for
+     a local debug build). Nothing from this one goes into `.env` or `app.json` either —
+     Google's servers use it purely to check that the app calling in is really this app,
+     matched by package name and signature. Skipping it doesn't break the build; it
+     surfaces later as a `DEVELOPER_ERROR` the first time someone taps the button on
+     Android.
+2. **Supabase dashboard** → Authentication → Providers → Google → enable it, and paste
+   the **web** client ID and secret from the credential above. This is what makes
+   `supabase.auth.signInWithIdToken({ provider: "google", ... })` accept the token instead
+   of rejecting it as an untrusted audience.
+3. Rebuild the dev client (`eas build --profile development`, or `npx expo run:ios` /
+   `run:android` locally) — the plugin config only takes effect in a native build, not in
+   Metro alone.
+
+Apple sign-in is **scaffolded but switched off**: the UI and the `signInWithIdToken({
+provider: "apple", ... })` call already exist (`lib/auth-providers.ts`), gated behind
+`FEATURES.appleSignIn` in `lib/features.ts`. Turning it on needs an Apple Developer
+account to register the "Sign in with Apple" capability and enable the provider in
+Supabase the same way as Google — nothing to do until that account exists.
+
 ---
 
 ## Project status
@@ -112,10 +155,13 @@ Topics are wired end to end; auth and saving a round are the two pieces still st
   `fetchQuizQuestions`, `fetchRandomTopic(s)`, `fetchDailyTopic`) are done and typed
   from `lib/database.types.ts`, and screens call them directly: `home.tsx` draws
   topics, `quiz.tsx` and `quiz-result.tsx` fetch the quiz questions for a round.
-- Every player is signed in **anonymously** (`lib/auth-context.tsx`), established
-  before any screen mounts and kept in the Keychain / encrypted shared preferences
-  through `lib/secure-store-adapter.ts`. Without a session `auth.uid()` is null and
-  RLS keeps `speech_sessions` shut, so the gate is what makes saving possible at all.
+- A player is either resumed from a stored session or lands on `/login`
+  (`lib/auth-context.tsx`, `app/(auth)/login.tsx`) with three ways in: Google, Apple
+  (scaffolded, off until there's an Apple developer account — § 7), or a guest account
+  (an anonymous Supabase user, same as before). Whichever it is, the session is kept in
+  the Keychain / encrypted shared preferences through `lib/secure-store-adapter.ts`.
+  Without a session `auth.uid()` is null and RLS keeps `speech_sessions` shut, so the
+  gate is what makes saving possible at all.
 - A finished round is **written for real**: `lib/round-session.tsx` carries it from the
   draw to the result screen, and `lib/speech-sessions.ts` upserts it — topic, start,
   spoken duration, quiz score and the on-device transcript.
