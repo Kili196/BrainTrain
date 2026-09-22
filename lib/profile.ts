@@ -1,5 +1,9 @@
 import type { Database } from "./database.types";
-import type { OnboardingData } from "./onboarding-storage";
+import {
+  getHasOnboarded,
+  saveOnboarding,
+  type OnboardingData,
+} from "./onboarding-storage";
 import { supabase } from "./supabase";
 
 // The profile in Supabase. AsyncStorage still holds a copy — that is what
@@ -37,6 +41,42 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   }
 
   return data;
+}
+
+// Answers "should this account see onboarding?" for the routing gate in
+// `app/index.tsx`, and is what makes stats the same on a new phone: without it
+// the decision was purely the device-local flag, so a returning account on a
+// fresh device — whose profile and rounds already live in Supabase — got sent
+// back through onboarding and overwrote its own profile.
+//
+// Local first, because the common case (returning user, same phone) must answer
+// offline and instantly. Only when there is no local copy do we ask the server:
+// the profile row always exists (signup trigger), so "already onboarded" means
+// it carries the data the flow writes, which we detect by `country_code` — the
+// one field onboarding always sets and a fresh row never has. When it does, we
+// seed the local flag from it so this network round trip happens once per device.
+export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  if (await getHasOnboarded()) return true;
+
+  const profile = await fetchProfile(userId);
+  if (!profile || !profile.country_code) return false;
+
+  await saveOnboarding({
+    name: profile.display_name ?? "",
+    countryCode: profile.country_code,
+    birth: birthFieldsFromIso(profile.birth_date),
+  });
+  return true;
+}
+
+// Inverse of `toIsoDate`: the flow keeps the birthdate as three fields, so a
+// profile hydrated from the server's single `date` is split back apart. The
+// padded parts ("05") are valid as-is — nothing reads them back except the
+// presence check — so there's no need to strip the zero-padding.
+function birthFieldsFromIso(iso: string | null): OnboardingData["birth"] {
+  if (!iso) return { day: "", month: "", year: "" };
+  const [year = "", month = "", day = ""] = iso.split("-");
+  return { day, month, year };
 }
 
 // Update, never insert. The row already exists: a trigger on auth.users creates

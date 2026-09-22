@@ -13,20 +13,31 @@ import { AppState } from "react-native";
 import { isAuthApiError } from "@supabase/supabase-js";
 
 import { StartupError } from "../components/ui/StartupError";
+import {
+  signInWithAppleIdToken,
+  signInWithGoogleIdToken,
+  type SignInResult,
+} from "./auth-providers";
+import { clearOnboarding } from "./onboarding-storage";
 import { supabase } from "./supabase";
 
 // The account, established once at startup and held for the whole app.
 //
-// Every user is signed in anonymously: Supabase creates a real row in
-// auth.users and hands back a JWT, without asking for an email. That is what
-// makes `auth.uid()` non-null, which is what row level security is built on —
-// without it a round has no owner and cannot be saved at all.
+// A session is either resumed from SecureStore or built by signing in — with
+// Google, with Apple, or as a guest (an anonymous Supabase user: a real row in
+// auth.users and a JWT, without asking for an email). Whichever it is, that is
+// what makes `auth.uid()` non-null, which is what row level security is built
+// on — without it a round has no owner and cannot be saved at all.
 //
-// The provider gates the app. Until there is a session we render nothing, and
-// if one cannot be established we render a retry screen instead of the app.
-// The alternative — letting the app run without an account — is exactly the bug
-// we are removing: everything looks fine and nothing is ever stored.
-export type AuthStatus = "loading" | "ready" | "error";
+// The provider gates the app. Until the startup check has answered we render
+// nothing; a signed-out result renders the app anyway, so `app/index.tsx` can
+// redirect to `/login`; a session (of any of the three kinds above) renders
+// the app for real; and a startup failure renders a retry screen instead of
+// any of that. The one thing we never do is let a screen mount without the
+// question answered at all — that is the silent-non-saving bug this file
+// used to be about, and signed-out has to be a real, visible state rather
+// than something a screen has to remember to check for itself.
+export type AuthStatus = "loading" | "signed-out" | "ready" | "error";
 
 // Two very different failures wear the same "it didn't work" on screen unless
 // they are told apart. `isAuthApiError` is true only when Supabase answered with
@@ -42,33 +53,121 @@ function describe(error: unknown): Failure {
   return { kind: isAuthApiError(error) ? "rejected" : "offline", detail };
 }
 
+// Email sign-up has an outcome the OAuth flows and guest don't: the account can
+// be created but not yet usable, because the project requires email
+// confirmation. That is a success, not an error — the screen just says "check
+// your inbox" instead of navigating — so it gets its own outcome rather than
+// being folded into SignInResult.
+export type EmailSignUpResult =
+  | { outcome: "signed-in" }
+  | { outcome: "confirm-email" }
+  | { outcome: "error"; detail: string };
+
 export type AuthApi = {
   status: AuthStatus;
-  // Null only while loading or after a failure; inside the app it is always set.
+  // Null only while loading, signed out, or after a failure; inside the app
+  // it is always set.
   userId: string | null;
+  // The ways a session comes to exist. None of these touch `userId` or
+  // `status` themselves — the `onAuthStateChange` listener below does, for
+  // all of them the same way, since Supabase raises SIGNED_IN for each.
+  signInWithGoogle: () => Promise<SignInResult>;
+  signInWithApple: () => Promise<SignInResult>;
+  continueAsGuest: () => Promise<SignInResult>;
+  // Email/password. Sign-in mirrors the OAuth calls (success | error — there is
+  // no "cancelled" without a native sheet). Sign-up carries the extra
+  // confirm-email outcome above.
+  signInWithEmail: (email: string, password: string) => Promise<SignInResult>;
+  signUpWithEmail: (email: string, password: string) => Promise<EmailSignUpResult>;
+  // Ends the session and clears the device-local onboarding flag, so the next
+  // guest re-onboards instead of the app assuming the last player's profile.
+  signOut: () => Promise<void>;
 };
 
 const Context = createContext<AuthApi | null>(null);
 
-// Returns the id of the signed-in user, creating the anonymous account on the
-// first launch. A stored session is reused, so this normally touches the
-// network exactly once in the app's lifetime.
-async function establishSession(): Promise<string> {
+// The id of the session already sitting in SecureStore, or null if there is
+// none to resume. Never creates one — that used to be this function's job,
+// but signing in anonymously by default is exactly the assumption a login
+// screen exists to remove. Reading it is enough to answer "loading" vs.
+// "signed-out" vs. "ready" at startup; the how of getting signed in — guest,
+// Google, Apple — is now a screen's job (`app/(auth)/login.tsx`), not this
+// effect's.
+async function establishSession(): Promise<string | null> {
   // Reads the session out of SecureStore. Offline is fine here — that is the
   // whole point of persisting it — so a returning user never waits on a request.
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-  if (data.session) return data.session.user.id;
+  return data.session?.user.id ?? null;
+}
 
+// The "Continue as guest" choice on the login screen. Word for word what
+// `establishSession` used to do automatically for every player: a real
+// anonymous Supabase user (a JWT, no email, still what makes `auth.uid()`
+// non-null for RLS) rather than an actual guest mode with no account at all.
+//
+// Deliberately NOT linked to a Google/Apple identity later: signing in with
+// Google after this creates a second, separate account, and this guest
+// account's rounds do not follow. The fix is `supabase.auth.linkIdentity` —
+// upgrading the anonymous session in place instead of replacing it — but that
+// is a deliberate choice for later, not an oversight here.
+async function continueAsGuest(): Promise<SignInResult> {
   const created = await supabase.auth.signInAnonymously();
-  if (created.error) throw created.error;
+  if (created.error) {
+    return { outcome: "error", detail: describe(created.error).detail };
+  }
   if (!created.data.session) {
     // Shouldn't happen: anonymous sign-in has no confirmation step, so a
     // success without a session would mean the provider is switched off.
-    throw new Error("Anonymous sign-in returned no session.");
+    return {
+      outcome: "error",
+      detail: "Anonymous sign-in returned no session.",
+    };
   }
 
-  return created.data.session.user.id;
+  return { outcome: "success" };
+}
+
+// Email/password sign-in. No native SDK and no ID token round trip — just
+// Supabase — so this lives here beside `continueAsGuest` rather than in
+// auth-providers.ts (which exists specifically to isolate the native modules).
+// Trimming is the caller's job; this only reports success or failure, and a
+// wrong password comes back as an ordinary `error`.
+async function signInWithEmail(
+  email: string,
+  password: string
+): Promise<SignInResult> {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { outcome: "error", detail: describe(error).detail };
+  return { outcome: "success" };
+}
+
+// Email/password sign-up. Whether the new account is immediately usable is a
+// project setting, not something this call chooses: with "Confirm email" off,
+// signUp returns a session (onAuthStateChange has already flipped us to ready);
+// with it on, there is a user but no session — the account exists but can't act
+// until the emailed link is clicked. Presence of a session is exactly that
+// distinction, so we branch on it rather than guessing from config.
+async function signUpWithEmail(
+  email: string,
+  password: string
+): Promise<EmailSignUpResult> {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) return { outcome: "error", detail: describe(error).detail };
+  return data.session
+    ? { outcome: "signed-in" }
+    : { outcome: "confirm-email" };
+}
+
+async function signOut(): Promise<void> {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+
+  // The flag `app/index.tsx` reads to skip onboarding is device-local and
+  // profile-shaped — it must not outlive the account it was written for, or
+  // the next guest on this phone would sail past onboarding with no profile
+  // of their own underneath it.
+  await clearOnboarding();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -101,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         settled.current = true;
         setUserId(id);
-        setStatus("ready");
+        setStatus(id ? "ready" : "signed-out");
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -125,11 +224,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       // The listener fires INITIAL_SESSION on subscribe, and that can land
-      // either side of the sign-in above. Ignoring it until the first attempt
+      // either side of the check above. Ignoring it until the first attempt
       // has answered keeps a null initial session from wiping a fresh id.
       if (!settled.current) return;
 
-      setUserId(session?.user.id ?? null);
+      // The one place `status` reacts to a session appearing or disappearing
+      // after startup — so signing in with Google, with Apple, as a guest, or
+      // signing out all flow through here the same way, instead of each of
+      // those four call sites setting state for itself. That is also why
+      // `signInWithGoogle` etc. never touch `userId` directly: Supabase
+      // raises SIGNED_IN/SIGNED_OUT for every one of them, and this already
+      // catches it.
+      if (session) {
+        setUserId(session.user.id);
+        setStatus("ready");
+      } else {
+        setUserId(null);
+        setStatus("signed-out");
+      }
     });
 
     // Never call other supabase methods inside that callback — supabase-js
@@ -154,7 +266,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.remove();
   }, []);
 
-  const api = useMemo<AuthApi>(() => ({ status, userId }), [status, userId]);
+  const api = useMemo<AuthApi>(
+    () => ({
+      status,
+      userId,
+      // Stable module-level functions — none of them close over component
+      // state, so there is nothing for this memo to actually recompute when
+      // they're "added" on every render.
+      signInWithGoogle: signInWithGoogleIdToken,
+      signInWithApple: signInWithAppleIdToken,
+      continueAsGuest,
+      signInWithEmail,
+      signUpWithEmail,
+      signOut,
+    }),
+    [status, userId]
+  );
 
   if (status === "error" || (status === "loading" && failedOnce)) {
     return (
