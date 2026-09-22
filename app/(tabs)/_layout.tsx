@@ -4,6 +4,7 @@ import { Redirect, Tabs } from "expo-router";
 
 import { FADE_EASING } from "../../components/game/FlyAway";
 import { TabBar } from "../../components/ui/TabBar";
+import { useAuth } from "../../lib/auth-context";
 import { getHasOnboarded } from "../../lib/onboarding-storage";
 import {
   RoundStartProvider,
@@ -15,6 +16,7 @@ import { colors } from "../../theme/colors";
 const FADE_MS = 280;
 
 export default function MainTabsLayout() {
+  const { status } = useAuth();
   const [isOnboared, setOnboarding] = useState<boolean | null>(null);
 
   // Held here rather than in Home, because both things it drives — the tab bar
@@ -38,6 +40,17 @@ export default function MainTabsLayout() {
     animation.start();
     return () => animation.stop();
   }, [round.fading, fade]);
+
+  // Signing out has to take the tabs down with it, not just point a link at
+  // the login screen. `settings.tsx` navigates once `signOut()` resolves, but
+  // the session is gone before that and every screen still mounted re-renders
+  // first — `useUserId()` throws for all of them (profile, achievements,
+  // knowledge, use-streak-days). A layout renders before its children, so
+  // deciding it here is what makes the tab tree disappear in the same render
+  // that drops the id, instead of one render too late.
+  if (status === "signed-out") {
+    return <Redirect href="/login" />;
+  }
 
   if (isOnboared === null) {
     return null;
