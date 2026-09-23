@@ -24,6 +24,11 @@ export type TextFieldProps = {
   | "onSubmitEditing"
   | "accessibilityLabel"
   | "textAlign"
+  // Login needs a masked field and the platform autofill hints; onboarding
+  // never used these, so they were simply not exposed before.
+  | "secureTextEntry"
+  | "autoComplete"
+  | "textContentType"
 >;
 
 export function TextField({ variant = "input", ...inputProps }: TextFieldProps) {

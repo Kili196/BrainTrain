@@ -15,19 +15,20 @@ import { useToast } from "../../lib/toast-context";
 import { colors } from "../../theme/colors";
 
 // The settings tab, from the "Settings" mockup — but carrying only what is
-// true. The mockup draws four sections and eleven rows; four of those rows
+// true. The mockup draws four sections and eleven rows; three of those rows
 // cannot exist yet, and a row that leads nowhere is worse than no row:
 //
-//   Change password  — there is no password. Every account is anonymous.
+//   Change password  — only email accounts have a password, and there is no
+//                      reset or change flow behind it yet.
 //   Theme            — `theme/colors.js` is one dark palette; a switch with
 //                      nothing behind it would be the analysing screen's lie
 //                      in a different place.
 //   Help & FAQ,      — no content exists. Privacy becomes an App Store
 //   Privacy & terms    requirement before release, and gets a row then.
-//   Sign out         — the trap: with anonymous auth there are no credentials
-//                      to come back with, so signing out silently abandons the
-//                      account. It is "delete account" wearing a milder word,
-//                      and it comes back when a real login does.
+//
+// Sign out came back with the login screen. It sits in the danger zone rather
+// than under Account because for a guest it is still final: an anonymous
+// account has no credentials to come back with, and its dialog says so.
 //
 // The three notification switches are not here either — they need
 // `expo-notifications`, which is a dependency we have not taken on.
@@ -49,7 +50,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const toast = useToast();
-  const { deleteAccount } = useAuth();
+  const { signOut, deleteAccount } = useAuth();
   const { settings, update: updateSettings } = useGameSettings();
 
   // One value rather than a boolean per sheet, same as Home: the two are
@@ -58,8 +59,12 @@ export default function SettingsScreen() {
     "none"
   );
 
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  // Same shape for the two confirm dialogs and the work behind them: only one
+  // of each can be open or running at a time.
+  const [confirming, setConfirming] = useState<"none" | "sign-out" | "delete">(
+    "none"
+  );
+  const [busy, setBusy] = useState<"none" | "sign-out" | "delete">("none");
 
   // Same rule as Home: picking a category is what switches the mode, so backing
   // out of the picker leaves the mode alone rather than arming a category draw
@@ -79,23 +84,36 @@ export default function SettingsScreen() {
     });
   };
 
+  // Both end with no session. The tabs layout already redirects to /login in
+  // the same render that drops the user id; the replace onto "/" is the
+  // belt to that, and leaves the decision about where a signed-out player
+  // belongs in one place (`app/index.tsx`) instead of repeating it here.
+  const confirmSignOut = async () => {
+    setConfirming("none");
+    setBusy("sign-out");
+
+    try {
+      await signOut();
+      router.replace("/");
+    } catch (error) {
+      console.warn("[settings] could not sign out:", error);
+      setBusy("none");
+      toast.show("Couldn't sign out — try again");
+    }
+  };
+
   const confirmDelete = async () => {
-    setConfirmingDelete(false);
-    setDeleting(true);
+    setConfirming("none");
+    setBusy("delete");
 
     try {
       await deleteAccount();
-
-      // Straight to the gate rather than to onboarding: "/" re-reads local
-      // storage, which `deleteAccount` has just emptied, so the decision about
-      // where a player with no profile belongs stays in one place
-      // (`app/index.tsx`) instead of being repeated here.
       router.replace("/");
     } catch (error) {
       // Only the database call can land here, and it changes nothing when it
       // fails — the account is still there and the row is still pressable.
       console.warn("[account] could not be deleted:", error);
-      setDeleting(false);
+      setBusy("none");
       toast.show("Couldn't delete your account — try again");
     }
   };
@@ -142,18 +160,37 @@ export default function SettingsScreen() {
           {/* Design §4: destruction is a red text row plus a confirm dialog,
               never a filled red button. */}
           <Pressable
-            onPress={() => setConfirmingDelete(true)}
-            disabled={deleting}
+            onPress={() => setConfirming("sign-out")}
+            disabled={busy !== "none"}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            accessibilityState={{ disabled: busy !== "none" }}
+            className="border-t border-divider px-5 py-4 active:bg-card-quiet"
+          >
+            <Text
+              className="text-h4 font-sans-bold"
+              style={{
+                color: busy !== "none" ? colors.text.faint : colors.danger.DEFAULT,
+              }}
+            >
+              {busy === "sign-out" ? "Signing out…" : "Sign out"}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setConfirming("delete")}
+            disabled={busy !== "none"}
             accessibilityRole="button"
             accessibilityLabel="Delete account"
-            accessibilityState={{ disabled: deleting }}
+            accessibilityState={{ disabled: busy !== "none" }}
             className="border-b border-t border-divider px-5 py-4 active:bg-card-quiet"
           >
             <Text
               className="text-h4 font-sans-bold"
-              style={{ color: deleting ? colors.text.faint : colors.danger.DEFAULT }}
+              style={{
+                color: busy !== "none" ? colors.text.faint : colors.danger.DEFAULT,
+              }}
             >
-              {deleting ? "Deleting…" : "Delete account"}
+              {busy === "delete" ? "Deleting…" : "Delete account"}
             </Text>
           </Pressable>
         </Section>
@@ -179,7 +216,20 @@ export default function SettingsScreen() {
       />
 
       <Dialog
-        visible={confirmingDelete}
+        visible={confirming === "sign-out"}
+        title="Sign out?"
+        // Kili's copy from the login screen PR, minus Apple, which is switched
+        // off and so not a way back in yet.
+        body="You can sign back in with the same Google account or email. A guest account can't be recovered once you sign out of it."
+        cancelLabel="Stay signed in"
+        confirmLabel="Sign out"
+        destructive
+        onCancel={() => setConfirming("none")}
+        onConfirm={() => void confirmSignOut()}
+      />
+
+      <Dialog
+        visible={confirming === "delete"}
         title="Delete account?"
         // The mockup's words, and they are accurate: the rounds, the points and
         // the mastered topics all hang off the user row that the RPC deletes.
@@ -187,7 +237,7 @@ export default function SettingsScreen() {
         cancelLabel="Cancel"
         confirmLabel="Delete"
         destructive
-        onCancel={() => setConfirmingDelete(false)}
+        onCancel={() => setConfirming("none")}
         onConfirm={() => void confirmDelete()}
       />
     </View>
