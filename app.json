@@ -8,16 +8,24 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.braintrain.app"
+      "bundleIdentifier": "com.braintrain.app",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "BrainTrain transcribes your speech on-device so it can be shown back and later analysed.",
+        "NSMicrophoneUsageDescription": "BrainTrain uses the microphone to transcribe what you say during a speaking round."
+      }
     },
     "android": {
+      "package": "com.braintrain.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +44,21 @@
           ]
         }
       ],
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.TODO-REPLACE-WITH-REVERSED-IOS-CLIENT-ID"
+        }
+      ],
+      "expo-apple-authentication"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "830b3d79-6d71-4286-8110-fd5bf4899d9f"
+      }
+    },
+    "owner": "faxi1337"
   }
 }
