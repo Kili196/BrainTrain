@@ -68,6 +68,14 @@ export default function SignUpScreen() {
         // clicked. Send them back to sign in once they've confirmed.
         toast.show("Check your inbox to confirm your email");
         router.back();
+      } else if (result.outcome === "exists") {
+        // Back to /login, where signing in with that address is one step.
+        toast.show("An account with this email already exists — sign in instead.");
+        router.back();
+      } else if (result.outcome === "invalid-email") {
+        toast.show("That email address doesn't look right.");
+      } else if (result.outcome === "rate-limited") {
+        toast.show("Too many sign-ups right now — try again in a few minutes.");
       }
       // "signed-in" is handled by the effect above.
     } finally {

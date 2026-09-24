@@ -116,8 +116,8 @@ export default function LoginScreen() {
 
   // Email/password sign-in. Not routed through `run` above: that helper's
   // generic "Couldn't sign in — try again" is wrong for the case that matters
-  // most here — a wrong password — so this reports it in the terms the player
-  // can act on. Success still needs no handling; the effect above navigates.
+  // most here — a wrong password, or an unconfirmed address — so this reports
+  // each in the terms the player can act on. Success still needs no handling; the effect above navigates.
   const onSignIn = async () => {
     if (busy) return;
 
@@ -130,9 +130,17 @@ export default function LoginScreen() {
     setPending("email");
     try {
       const result = await signInWithEmail(trimmedEmail, password);
-      if (result.outcome === "error") {
+      if (result.outcome === "wrong-credentials") {
+        // Also what a player sees who never signed up — Supabase won't say
+        // which — so the way to sign-up rides along in the same line. Not
+        // "check your email": that reads as "check your inbox", and people
+        // then wait for a mail sign-in never sends.
+        toast.show("Wrong email or password. New here? Create an account below.");
+      } else if (result.outcome === "unconfirmed") {
+        toast.show("Confirm your email first — the link is in your inbox.");
+      } else if (result.outcome === "error") {
         console.warn("[auth] email sign-in failed:", result.detail);
-        toast.show("Couldn't sign in — check your email and password");
+        toast.show("Couldn't sign in — try again");
       }
     } finally {
       setPending(null);

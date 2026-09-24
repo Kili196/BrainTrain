@@ -61,6 +61,21 @@ function describe(error: unknown): Failure {
 export type EmailSignUpResult =
   | { outcome: "signed-in" }
   | { outcome: "confirm-email" }
+  | { outcome: "exists" }
+  | { outcome: "invalid-email" }
+  | { outcome: "rate-limited" }
+  | { outcome: "error"; detail: string };
+
+// Email sign-in likewise has two failures the player can act on, and neither
+// is "try again": the password is wrong (or no such account exists — Supabase
+// answers both with the same `invalid_credentials`, on purpose, so nobody can
+// probe which addresses are registered), or the account exists but its
+// confirmation link hasn't been clicked yet. Everything else — offline, rate
+// limit — stays a plain `error`.
+export type EmailSignInResult =
+  | { outcome: "success" }
+  | { outcome: "wrong-credentials" }
+  | { outcome: "unconfirmed" }
   | { outcome: "error"; detail: string };
 
 export type AuthApi = {
@@ -77,7 +92,7 @@ export type AuthApi = {
   // Email/password. Sign-in mirrors the OAuth calls (success | error — there is
   // no "cancelled" without a native sheet). Sign-up carries the extra
   // confirm-email outcome above.
-  signInWithEmail: (email: string, password: string) => Promise<SignInResult>;
+  signInWithEmail: (email: string, password: string) => Promise<EmailSignInResult>;
   signUpWithEmail: (email: string, password: string) => Promise<EmailSignUpResult>;
   // Ends the session and clears the device-local onboarding flag, so the next
   // guest re-onboards instead of the app assuming the last player's profile.
@@ -131,15 +146,17 @@ async function continueAsGuest(): Promise<SignInResult> {
 // Email/password sign-in. No native SDK and no ID token round trip — just
 // Supabase — so this lives here beside `continueAsGuest` rather than in
 // auth-providers.ts (which exists specifically to isolate the native modules).
-// Trimming is the caller's job; this only reports success or failure, and a
-// wrong password comes back as an ordinary `error`.
+// Trimming is the caller's job. The error is read by its `code`, not its
+// message: the code is the stable part of the API, the wording is not.
 async function signInWithEmail(
   email: string,
   password: string
-): Promise<SignInResult> {
+): Promise<EmailSignInResult> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { outcome: "error", detail: describe(error).detail };
-  return { outcome: "success" };
+  if (!error) return { outcome: "success" };
+  if (error.code === "invalid_credentials") return { outcome: "wrong-credentials" };
+  if (error.code === "email_not_confirmed") return { outcome: "unconfirmed" };
+  return { outcome: "error", detail: describe(error).detail };
 }
 
 // Email/password sign-up. Whether the new account is immediately usable is a
@@ -153,7 +170,27 @@ async function signUpWithEmail(
   password: string
 ): Promise<EmailSignUpResult> {
   const { data, error } = await supabase.auth.signUp({ email, password });
+  // Supabase refuses a malformed address with `validation_failed` and a
+  // well-formed but blocked one (test@…, example.com) with
+  // `email_address_invalid` — to the player both mean "fix the address".
+  if (error?.code === "validation_failed" || error?.code === "email_address_invalid") {
+    return { outcome: "invalid-email" };
+  }
+  // The built-in mailer sends only a handful of mails an hour for the whole
+  // project, so this is a wait, not a failure.
+  if (error?.code === "over_email_send_rate_limit") {
+    return { outcome: "rate-limited" };
+  }
   if (error) return { outcome: "error", detail: describe(error).detail };
+  // An address that is already registered and confirmed is not an error here:
+  // with "Confirm email" on, Supabase answers with a look-alike success, so the
+  // response can't be used to probe which addresses exist — and sends no mail.
+  // The one tell is a user with no identities. We read it anyway, because
+  // "check your inbox" for a mail that never comes is worse than the leak.
+  // (An unconfirmed address still gets its identity and a fresh link.)
+  if (data.user && data.user.identities?.length === 0) {
+    return { outcome: "exists" };
+  }
   return data.session
     ? { outcome: "signed-in" }
     : { outcome: "confirm-email" };
