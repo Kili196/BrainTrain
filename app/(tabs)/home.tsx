@@ -13,12 +13,6 @@ import { StageTopic } from "../../components/game/StageTopic";
 import { ORBIT_POOL_SIZE, TopicOrbit } from "../../components/game/TopicOrbit";
 import { GearIcon } from "../../components/icons/GearIcon";
 import { Button } from "../../components/ui/Button";
-import {
-  DEFAULT_SETTINGS,
-  loadGameSettings,
-  saveGameSettings,
-  type GameSettings,
-} from "../../lib/game-settings";
 import type { CategoryKey } from "../../constants/categories";
 import { PLACEHOLDER_HAS_NEW_CHALLENGE } from "../../constants/placeholders";
 import {
@@ -28,6 +22,7 @@ import {
 import { clearOnboarding } from "../../lib/onboarding-storage";
 import { useRoundSession } from "../../lib/round-session";
 import { useRoundStart } from "../../lib/round-start-context";
+import { useGameSettings } from "../../lib/use-game-settings";
 import { useStreakDays } from "../../lib/use-streak-days";
 import {
   fetchDailyTopic,
@@ -81,8 +76,10 @@ export default function Home() {
 
   // Starts from the defaults and swaps in the stored values once they arrive.
   // Rendering defaults for one frame beats blocking the screen on a disk read —
-  // the settings are not visible until the sheet opens anyway.
-  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  // the settings are not visible until the sheet opens anyway. Held in a shared
+  // hook because the Settings tab is a second door to the same values, and this
+  // screen stays mounted while that door is used.
+  const { settings, update: updateSettings } = useGameSettings();
 
   // One value rather than a boolean per sheet: the two are mutually exclusive
   // by construction, so there is no state in which both are open. Stacked
@@ -102,8 +99,6 @@ export default function Home() {
   const [dailyTitle, setDailyTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    loadGameSettings().then(setSettings);
-
     hasSeenDailyTopic().then((seen) => setDailyUnseen(!seen));
 
     fetchDailyTopic()
@@ -193,14 +188,6 @@ export default function Home() {
     animation.start();
     return () => animation.stop();
   }, [starting, stageScale]);
-
-  // Write on every press rather than on close: the sheet has no Cancel, so
-  // there is nothing to roll back, and closing it by tapping the scrim must not
-  // be able to lose a change.
-  const updateSettings = (next: GameSettings) => {
-    setSettings(next);
-    void saveGameSettings(next);
-  };
 
   // Choosing a category is what switches the mode — the "By category" label
   // only opens this picker. Closing it without a choice therefore leaves the

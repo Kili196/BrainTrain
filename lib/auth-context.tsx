@@ -82,6 +82,9 @@ export type AuthApi = {
   // Ends the session and clears the device-local onboarding flag, so the next
   // guest re-onboards instead of the app assuming the last player's profile.
   signOut: () => Promise<void>;
+  // Deletes the account in the database, then signs out locally. Throws only
+  // when the deletion itself failed, in which case nothing has changed.
+  deleteAccount: () => Promise<void>;
 };
 
 const Context = createContext<AuthApi | null>(null);
@@ -168,6 +171,32 @@ async function signOut(): Promise<void> {
   // the next guest on this phone would sail past onboarding with no profile
   // of their own underneath it.
   await clearOnboarding();
+}
+
+// Account deletion, required by App Store Guideline 5.1.1(v). It ends exactly
+// like a sign-out: no session, `status` goes to "signed-out", and the player
+// lands on the login screen. Before real login existed this made a fresh
+// anonymous account straight away, because there was no screen without one to
+// fall back to. Now there is, and a new account nobody asked for would only be
+// the start of an orphan.
+async function deleteAccount(): Promise<void> {
+  // `delete_own_account` is a definer function that deletes the row in
+  // auth.users; profiles and speech_sessions follow via cascade. It reads
+  // auth.uid() itself, so there is nothing to pass and nothing to get wrong.
+  // Until it answers nothing has happened, so a failure is thrown and the
+  // caller can offer the row again.
+  const { error } = await supabase.rpc("delete_own_account");
+  if (error) throw error;
+
+  // Cleared before the session goes, for the same reason as in `signOut`.
+  await clearOnboarding();
+
+  // Local scope on purpose: the user row is already gone, so a server-side
+  // logout would be a request signed by a deleted account, and deleting the
+  // user took its refresh tokens with it, so there is nothing left to revoke.
+  // Without this the dead session would still be in SecureStore. The
+  // SIGNED_OUT it raises reaches the listener, which is what moves `status`.
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -279,6 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithEmail,
       signUpWithEmail,
       signOut,
+      deleteAccount,
     }),
     [status, userId]
   );
