@@ -90,11 +90,17 @@ export default function LoginScreen() {
     }
   };
 
-  // Apple sign-in only exists on iOS and only once its native module is set up
-  // (see FEATURES.appleSignIn). Google needs a custom dev build — it's absent in
-  // Expo Go. When either is unavailable the button still shows (the design pairs
-  // them), but a tap explains why instead of failing with a native error.
-  const appleAvailable = FEATURES.appleSignIn && Platform.OS === "ios";
+  // The native "Sign in with Apple" sheet is an iOS-only capability — it simply
+  // doesn't exist on Android — so the Apple button is only rendered there. On
+  // iOS it shows even before FEATURES.appleSignIn is switched on (the design
+  // pairs it with Google); until that flag flips, a tap explains it isn't
+  // available yet rather than crashing the native module.
+  const showApple = Platform.OS === "ios";
+  const appleAvailable = FEATURES.appleSignIn && showApple;
+
+  // Google needs a custom dev build — it's absent in Expo Go. Its button stays
+  // visible when unavailable (a tap explains why); only Apple is hidden off-iOS,
+  // since it's a whole platform's worth of missing, not a build-time gap.
 
   const onApple = () => {
     if (busy) return;
@@ -185,16 +191,20 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Provider buttons, side by side. */}
+          {/* Provider buttons, side by side. Apple only appears on iOS — on
+              Android it's a capability the device doesn't have, so Google (which
+              is flex-1) simply fills the row on its own. */}
           <View className="mt-7 flex-row gap-3">
-            <ProviderButton
-              icon={<AppleIcon size={18} color={colors.text.DEFAULT} />}
-              label="Apple"
-              busyLabel="Signing in…"
-              pending={pending === "apple"}
-              dimmed={busy || !appleAvailable}
-              onPress={onApple}
-            />
+            {showApple ? (
+              <ProviderButton
+                icon={<AppleIcon size={18} color={colors.text.DEFAULT} />}
+                label="Apple"
+                busyLabel="Signing in…"
+                pending={pending === "apple"}
+                dimmed={busy || !appleAvailable}
+                onPress={onApple}
+              />
+            ) : null}
             <ProviderButton
               icon={<GoogleIcon size={17} color={colors.text.DEFAULT} />}
               label="Google"
