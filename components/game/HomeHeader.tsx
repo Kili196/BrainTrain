@@ -42,9 +42,13 @@ export function HomeHeader({ streakDays, hasNewChallenge }: HomeHeaderProps) {
           <StreakFlame days={streakDays} />
         </View>
 
-        <View className="flex-1 items-end">
-          <NavLabel label="Challenges" marked={hasNewChallenge} />
-        </View>
+        {/* Challenges is hidden from the UI until the feature exists — the label
+            was a control that navigated nowhere. The empty cell stays so the
+            flame keeps the exact screen centre the three-cell row buys it.
+            `hasNewChallenge` and the `NavLabel` below are kept for when it
+            returns; nothing here is removed, only unrendered. */}
+        <View className="flex-1 items-end" />
+        {false ? <NavLabel label="Challenges" marked={hasNewChallenge} /> : null}
       </View>
     </View>
   );
