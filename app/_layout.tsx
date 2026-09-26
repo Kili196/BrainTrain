@@ -66,6 +66,7 @@ export default function RootLayout() {
               <Stack.Screen name="quiz" options={{ animation: "fade" }} />
               <Stack.Screen name="analyzing" options={{ animation: "fade" }} />
               <Stack.Screen name="quiz-result" options={{ animation: "fade" }} />
+              <Stack.Screen name="edit-profile" options={{ animation: "fade" }} />
             </Stack>
           </RoundSessionProvider>
         </ToastProvider>
