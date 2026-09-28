@@ -50,13 +50,18 @@ const DRIFT_MS = 140000;
 // dot being drawn bigger than it should be.
 const HUB_TOUCH = 44;
 
-// Two words of a category name at eyebrow size. Wide enough for "Universe &",
-// which is the longest first line in the pool.
-const LABEL_WIDTH = 78;
+// Two words of a category name at eyebrow size. 78 was enough on iOS and
+// broke "TECHNOLOGY" across two lines on Android, mid-word: the same
+// Archivo ExtraBold at the same size measures wider there once the 0.2em
+// eyebrow tracking is applied. Sized to the longest single word in the
+// pool rather than to the longest first line, so no name can hyphenate.
+const LABEL_WIDTH = 96;
 
 // How far past the hub the name sits, measured out from the centre so the five
-// labels splay outwards rather than stacking over the rings.
-const LABEL_OFFSET = 30;
+// labels splay outwards rather than stacking over the rings. Grown with
+// LABEL_WIDTH: a wider box reaches further back towards its own dot, and at
+// 30 the side names ("History", "Universe & Physics") touched theirs.
+const LABEL_OFFSET = 38;
 
 export type KnowledgeNetProps = {
   layout: NetLayout;
@@ -125,15 +130,29 @@ export function KnowledgeNet({ layout, onSelectCategory }: KnowledgeNetProps) {
             style={StyleSheet.absoluteFill}
           >
             <Defs>
+              {/* accent.raised rather than the base accent, and 0.32 rather
+                  than 0.20, because the first version sat too close to the
+                  page to hold its own hue. Measured on Android it was
+                  rgb(14,26,39) against a rgb(11,13,14) page — three levels
+                  of red above the background, and any 8-bit banding or
+                  screenshot compression rounds those away. A navy with its
+                  red gone reads as teal, which is how this was spotted. At
+                  0.32 the core measures rgb(18,41,66) and stays blue
+                  through all of that, while staying quiet enough to sit
+                  behind the net.
+
+                  raised is the Home PLAY colour (design §1), but this is
+                  not a second primary: nothing is filled with it, it only
+                  tints a gradient that fades to nothing. */}
               <RadialGradient id="halo" cx="50%" cy="50%" r="50%">
                 <Stop
                   offset="0%"
-                  stopColor={colors.accent.DEFAULT}
-                  stopOpacity={0.2}
+                  stopColor={colors.accent.raised}
+                  stopOpacity={0.32}
                 />
                 <Stop
                   offset="100%"
-                  stopColor={colors.accent.DEFAULT}
+                  stopColor={colors.accent.raised}
                   stopOpacity={0}
                 />
               </RadialGradient>
