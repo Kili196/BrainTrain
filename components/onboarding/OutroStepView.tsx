@@ -8,7 +8,7 @@ import { colors } from "../../theme/colors";
 
 // The last step: their two counters, standing here for the first time — topics,
 // and the hours they came out of. The landing's three placeholder plans are
-// left out on purpose (see the `finish` step); the paywall lands here later.
+// left out on purpose (see the `finish` step); the paywall follows this step.
 //
 // The numbers are the payoff of the whole flow, so they are set as large as
 // the app's name on the welcome, in the same gradient, and count up once when

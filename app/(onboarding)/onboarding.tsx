@@ -302,8 +302,10 @@ export default function OnboardingScreen() {
       return;
     }
 
-    // Replace, so back from home cannot land inside the flow.
-    router.replace("/home");
+    // Replace, so back cannot land inside the flow. The paywall comes next —
+    // onboarding → paywall → app — and it is skippable, so it always ends on
+    // home either way.
+    router.replace("/paywall");
   };
 
   const next = () => {

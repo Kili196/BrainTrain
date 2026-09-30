@@ -392,6 +392,20 @@ export default function Home() {
                 </Text>
               </Pressable>
             ) : null}
+
+            {/* Dev shortcut to the paywall, which otherwise sits behind the
+                whole onboarding. Push, not replace: back returns here. */}
+            {__DEV__ ? (
+              <Pressable
+                onPress={() => router.push("/paywall")}
+                accessibilityRole="button"
+                className="py-2"
+              >
+                <Text className="text-body font-sans-bold text-text-muted">
+                  Open the paywall
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </FlyAway>
 

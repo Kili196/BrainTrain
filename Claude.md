@@ -169,7 +169,9 @@ grey-blue on a phone, so every chromatic token was pulled 45% of the way to full
 saturation, with the blues lifted a little in lightness so they read brighter rather
 than merely deeper. Hues and roles are unchanged. **The phone is the reference for
 colour, never the desktop preview** — and the source of truth for these values is
-`theme/colors.js`, not this table.
+`theme/colors.js`, not this table. **Raised a second time on 2026-09-30** (75% of the
+remaining way to full saturation), so every hex in the tables below is now stale —
+read `theme/colors.js`.
 
 ### Backgrounds & surfaces
 

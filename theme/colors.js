@@ -30,14 +30,21 @@ const colors = {
   // came out grey-blue. Every hue and every role is unchanged — each colour was
   // pulled 45% of the way to full saturation, the blues lifted slightly in
   // lightness so they read brighter rather than merely deeper.
+  //
+  // Raised again on 2026-09-30, further this time: still "dead" on the phone
+  // (Fabian's monitor runs saturation very high, so the desktop preview lies).
+  // Every chromatic token — the accent family, the paywall and onboarding
+  // navies, podium, error, warning — was pulled 75% of the remaining way to
+  // full saturation, blues +5 lightness, the rest +2. Flags, feed brands, the
+  // result pair and the streak were already at full strength and stayed.
   accent: {
-    DEFAULT: "#1b5ba7",
-    shadow: "#113e75",
-    light: "#6aa3ef",
-    raised: "#2170c6",
+    DEFAULT: "#0865d4",
+    shadow: "#05489a",
+    light: "#77b0fc",
+    raised: "#0b7bf6",
     // the fill of a selected answer card (design §5). 20% of the accent, so the
     // card lifts without becoming a second primary button.
-    wash: "rgba(27,91,167,0.20)",
+    wash: "rgba(8,101,212,0.20)",
   },
 
   // text
@@ -69,7 +76,7 @@ const colors = {
     modal: "rgba(255,255,255,0.12)",
     // the rim of a selected answer card (design §5), and the ring of an
     // unchecked answer control (design §6).
-    selected: "rgba(106,163,239,0.45)",
+    selected: "rgba(119,176,252,0.45)",
     control: "rgba(255,255,255,0.20)",
     // the rim of a selected onboarding country row — same idea as `selected`
     // above, but white rather than accent-tinted (design §6 "checkbox").
@@ -126,9 +133,9 @@ const colors = {
   // appear on exactly one screen. Second place is the accent itself, which is
   // why the podium does not introduce a third blue.
   podium: {
-    first: "#8459ea",
-    second: "#1b5ba7",
-    third: "#d76711",
+    first: "#8553fa",
+    second: "#0865d4",
+    third: "#ee6a04",
   },
 
   // The onboarding flow, and nothing else. Its look is taken from the landing
@@ -151,7 +158,7 @@ const colors = {
     // the far end of the gradient (bright is the near end)
     violet: "#9458f5",
     // the plan card's navy, and the spent days in the year grid
-    navy: "#2c5382",
+    navy: "#0d5cbb",
     spent: "#4d4d52",
     // "I can" / "…I can't" on the explain test, once chosen. Fabian's call
     // (2026-09-29): the two answers get the colours of yes and no.
@@ -225,8 +232,35 @@ const colors = {
     },
   },
 
+  // The paywall, and nothing else — values from Fabian's own design
+  // (Paywall Screen.dc.html, 2026-09-30). Scoped like `podium`: a three-colour
+  // badge and brighter card text exist on this one screen so it can be louder
+  // than the rest of the app without the rest of the app getting louder. The
+  // chosen plan and the button wear the onboarding's gradient (`ob.violet` →
+  // `ob.bright`) instead of the design's own blues.
+  paywall: {
+    // the tick discs and the PRO column checks
+    navy: "#0d5cbb",
+    // the PRO pill
+    steel: "#0f72dc",
+    // everything on an unchosen plan card: rim, radio, label, price
+    planIdle: "rgba(255,255,255,0.5)",
+    // text on the chosen card that sits under its title
+    planSub: "rgba(255,255,255,0.88)",
+    // the glow behind the chosen card's title and price
+    planTextGlow: "rgba(255,255,255,0.6)",
+    // the deal line's blue
+    deal: "#70aaf8",
+    // the "Best value" badge, sliding blue → violet → orange
+    badge: ["#70aaf8", "#8657f6", "#ea6a08"],
+    // list text a step brighter than `text.strong`
+    item: "#e8e8e8",
+    // the "I already have a subscription" link
+    ghost: "#9a9a9a",
+  },
+
   // status
-  error: "#df4f4f",
+  error: "#f74141",
   danger: {
     DEFAULT: "#ff3b30",
     // 12% of the same red, behind the REC pill while recording. Design §14:
@@ -235,7 +269,7 @@ const colors = {
     // `result.wrong-wash`, which is the same value scoped to one screen.
     wash: "rgba(255,59,48,0.12)",
   },
-  warning: "#d59922",
+  warning: "#f6a70b",
 };
 
 module.exports = { colors };
