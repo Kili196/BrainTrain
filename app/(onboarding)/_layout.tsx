@@ -2,10 +2,9 @@ import { Stack } from "expo-router";
 
 import { OnboardingProvider } from "../../lib/onboarding-context";
 
-// Layout for the onboarding route group. Wraps all steps in the provider so the
-// answers collected on each screen survive until the Ready screen persists them.
-// The parentheses in the folder name make this a group: it shares this layout
-// without adding "onboarding" to the URL (routes stay /welcome, /name, …).
+// Layout for the onboarding route group. The whole flow is one screen now
+// (`onboarding.tsx`, see why there); the provider sits here rather than inside
+// it so the answers live outside the screen that shows them.
 export default function OnboardingLayout() {
   return (
     <OnboardingProvider>

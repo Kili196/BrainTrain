@@ -236,7 +236,7 @@ export default function Home() {
 
   const reset = async () => {
     await clearOnboarding();
-    router.replace("/welcome");
+    router.replace("/onboarding");
   };
 
   return (
