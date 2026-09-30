@@ -131,6 +131,100 @@ const colors = {
     third: "#d76711",
   },
 
+  // The onboarding flow, and nothing else. Its look is taken from the landing
+  // page's own onboarding (offhand-landing), which Fabian chose over the app's
+  // design system for this one flow on 2026-09-29 — white pill button, a
+  // violet-to-blue gradient, and the six-colour subject arc. Scoped the way
+  // `streak`, `result` and `podium` are: these must not leak into any other
+  // screen, where the app's single-hue rule still holds.
+  ob: {
+    bg: "#0a0a0b",
+    surface: "#141417", // the reply sheet
+    raised: "#1c1c20", // tiles, cards, tracks, the back button
+    border: "#26262b",
+    text: "#f4f4f6",
+    muted: "#86868f",
+    // lit outlines, values and focus. Light only — never a fill behind text.
+    bright: "#4795f5",
+    // 16% of `bright` over the page: the ground of a chosen tile
+    wash: "rgba(71,149,245,0.16)",
+    // the far end of the gradient (bright is the near end)
+    violet: "#9458f5",
+    // the plan card's navy, and the spent days in the year grid
+    navy: "#2c5382",
+    spent: "#4d4d52",
+    // "I can" / "…I can't" on the explain test, once chosen. Fabian's call
+    // (2026-09-29): the two answers get the colours of yes and no.
+    yes: "#22c55e",
+    no: "#ef4444",
+    // Each feed's own colours, for its tile once chosen — Fabian's call
+    // (2026-09-29). Colour only: no logos, no wordmarks. The landing ruled
+    // brand colours out as looking like an association; if App Review ever
+    // objects, these are the lines to change.
+    brand: {
+      tiktok: ["#25f4ee", "#0a0a0b", "#fe2c55"],
+      reels: ["#feda75", "#fa7e1e", "#d62976", "#962fbf", "#4f5bd5"],
+      shorts: ["#ff4e45", "#ff0000", "#b30000"],
+      x: ["#3a3d41", "#0a0a0b"],
+      twitch: ["#a970ff", "#9146ff", "#6a2cd8"],
+    },
+    // the subject arc, teal through blue to violet
+    subject: {
+      science: "#2dd4bf",
+      economy: "#38bdf8",
+      politics: "#60a5fa",
+      history: "#818cf8",
+      culture: "#a78bfa",
+      everyday: "#c084fc",
+    },
+    // Each country's flag colours, left to right as a gradient across the
+    // chosen country row — Fabian's call (2026-09-30). Keyed by the ISO code in
+    // constants/countries.ts; a country missing here falls back to the subject
+    // arc. Stripes and emblems are flattened to their main colours in order.
+    flag: {
+      DE: ["#000000", "#dd0000", "#ffce00"],
+      AT: ["#ed2939", "#ffffff", "#ed2939"],
+      CH: ["#da291c", "#ffffff", "#da291c"],
+      NL: ["#ae1c28", "#ffffff", "#21468b"],
+      FR: ["#002395", "#ffffff", "#ed2939"],
+      IT: ["#009246", "#ffffff", "#ce2b37"],
+      ES: ["#aa151b", "#f1bf00", "#aa151b"],
+      BE: ["#000000", "#fdda24", "#ef3340"],
+      PT: ["#046a38", "#da291c"],
+      IE: ["#169b62", "#ffffff", "#ff883e"],
+      GB: ["#012169", "#ffffff", "#c8102e"],
+      DK: ["#c8102e", "#ffffff", "#c8102e"],
+      SE: ["#006aa7", "#fecc00", "#006aa7"],
+      NO: ["#ba0c2f", "#ffffff", "#00205b"],
+      FI: ["#ffffff", "#002f6c", "#ffffff"],
+      PL: ["#ffffff", "#dc143c"],
+      CZ: ["#ffffff", "#11457e", "#d7141a"],
+      SK: ["#ffffff", "#0b4ea2", "#ee1c25"],
+      HU: ["#ce2939", "#ffffff", "#477050"],
+      RO: ["#002b7f", "#fcd116", "#ce1126"],
+      BG: ["#ffffff", "#00966e", "#d62612"],
+      GR: ["#0d5eaf", "#ffffff", "#0d5eaf"],
+      HR: ["#ff0000", "#ffffff", "#171796"],
+      SI: ["#ffffff", "#005da4", "#ed1c24"],
+      RS: ["#c6363c", "#0c4076", "#ffffff"],
+      UA: ["#0057b7", "#ffd700"],
+      TR: ["#e30a17", "#ffffff", "#e30a17"],
+      US: ["#b22234", "#ffffff", "#3c3b6e"],
+      CA: ["#d52b1e", "#ffffff", "#d52b1e"],
+      MX: ["#006847", "#ffffff", "#ce1126"],
+      BR: ["#009c3b", "#ffdf00", "#002776"],
+      AR: ["#74acdf", "#ffffff", "#74acdf"],
+      AU: ["#012169", "#ffffff", "#e4002b"],
+      NZ: ["#012169", "#ffffff", "#c8102e"],
+      ZA: ["#007a4d", "#ffb612", "#de3831", "#002395"],
+      IN: ["#ff9933", "#ffffff", "#138808"],
+      JP: ["#ffffff", "#bc002d", "#ffffff"],
+      CN: ["#de2910", "#ffde00", "#de2910"],
+      KR: ["#ffffff", "#cd2e3a", "#0047a0"],
+      SG: ["#ef3340", "#ffffff"],
+    },
+  },
+
   // status
   error: "#df4f4f",
   danger: {

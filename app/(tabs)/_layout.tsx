@@ -57,7 +57,7 @@ export default function MainTabsLayout() {
   }
 
   if (!isOnboared) {
-    return <Redirect href="/welcome" />;
+    return <Redirect href="/onboarding" />;
   }
 
   return (

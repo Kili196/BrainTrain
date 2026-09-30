@@ -57,5 +57,5 @@ export default function Index() {
   // that stale flag. The server check above only runs when nothing is cached,
   // so it doesn't yet cover this; flagged for whenever more than one real
   // account per device matters.
-  return <Redirect href={hasOnboarded ? "/home" : "/welcome"} />;
+  return <Redirect href={hasOnboarded ? "/home" : "/onboarding"} />;
 }

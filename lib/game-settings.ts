@@ -39,7 +39,10 @@ export const DEFAULT_SETTINGS: GameSettings = {
   topicMode: "random",
   categoryKey: null,
   prepSeconds: 15 * 60,
-  speakingSeconds: 2 * 60,
+  // One minute because the onboarding promises "sixty seconds out loud" — the
+  // first round has to be the thing the flow described. Only new players get
+  // it; a stored setting always wins over this default.
+  speakingSeconds: 60,
 };
 
 // One stepper press. Clamping here rather than in the screen means the buttons

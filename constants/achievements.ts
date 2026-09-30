@@ -309,7 +309,7 @@ const DEFINITIONS = [
     family: "endurance",
     glyph: "bar",
     // A round can never run longer than the speaking time set on the device,
-    // and the default is 2:00 — so this one asks the player to raise that
+    // and the default is 1:00 — so this one asks the player to raise that
     // setting before it can be earned at all. That is the point of it: it is
     // the only row in the list that is about the length of a single round.
     target: 3 * MINUTE,
