@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,8 +9,6 @@ import { NetIcon } from "../../components/icons/NetIcon";
 import { CategoryTopicsSheet } from "../../components/knowledge/CategoryTopicsSheet";
 import { KnowledgeNet } from "../../components/knowledge/KnowledgeNet";
 import { BobbingDots } from "../../components/ui/BobbingDots";
-import { Button } from "../../components/ui/Button";
-import { TextField } from "../../components/ui/TextField";
 import { useUserId } from "../../lib/auth-context";
 import {
   fetchKnowledge,
@@ -23,7 +21,12 @@ import { colors } from "../../theme/colors";
 
 // The Knowledge screen (mockups/Knowledge Screen.dc.html): the whole topic pool
 // as a net of dots, the same thing as a list of five categories, and the
-// player's own rounds underneath, searchable.
+// player's own rounds underneath.
+//
+// No search field and no "No rounds yet" block (Fabian, 2026-09-30): the
+// mockup had both, but a search over a handful of rounds is noise, and with no
+// rounds the unlit net already says "nothing yet" — a second call to play
+// under it did not belong on this screen.
 //
 // It carries the Home header, mockup and all — which means it carries the
 // streak flame. Wanting a real number under it here is what retired
@@ -37,13 +40,11 @@ type ViewMode = "net" | "list";
 
 export default function KnowledgeScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const userId = useUserId();
 
   const [summary, setSummary] = useState<KnowledgeSummary | null>(null);
   const [failed, setFailed] = useState(false);
   const [mode, setMode] = useState<ViewMode>("net");
-  const [query, setQuery] = useState("");
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -68,15 +69,10 @@ export default function KnowledgeScreen() {
   );
 
   // The layout is pure and the pool is 125 topics, but it runs trigonometry per
-  // dot and the search box re-renders this component on every keystroke.
+  // dot, and toggling the view or opening a category re-renders this component.
   const layout = useMemo(
     () => (summary ? layoutNet(summary.categories) : null),
     [summary]
-  );
-
-  const rounds = useMemo(
-    () => matching(summary?.rounds ?? [], query),
-    [summary, query]
   );
 
   const waiting = summary === null && !failed;
@@ -100,12 +96,8 @@ export default function KnowledgeScreen() {
     // FlatList reaches its outer style, which ends with the content, and a
     // short list would leave the rest of the screen unpainted.
     <View className="flex-1 bg-bg">
-      {/* Above the list, not inside its header. A `TextInput` in a
-          `ListHeaderComponent` is inside a virtualized tree, and this list's
-          `data` changes with every keystroke — the header gets torn down and
-          rebuilt mid-word, which takes the keyboard with it. Out here it is an
-          ordinary view that nothing re-renders, and the search stays reachable
-          once the net has been scrolled past. */}
+      {/* Above the list, not inside its header, so the header and the view
+          toggle stay put once the net has been scrolled past. */}
       <View
         className="gap-[18px] px-5 pb-[18px]"
         style={{ paddingTop: insets.top + 44 }}
@@ -113,14 +105,12 @@ export default function KnowledgeScreen() {
         <Header
           summary={summary}
           mode={mode}
-          query={query}
           onToggleMode={() => setMode(mode === "net" ? "list" : "net")}
-          onQuery={setQuery}
         />
       </View>
 
       <FlatList
-        data={rounds}
+        data={summary.rounds}
         keyExtractor={(round) => round.id}
         renderItem={({ item }) => <RoundRow round={item} />}
         ListHeaderComponent={
@@ -141,18 +131,8 @@ export default function KnowledgeScreen() {
             ) : null}
           </View>
         }
-        ListEmptyComponent={
-          summary.rounds.length === 0 ? (
-            <FirstRun onPlay={() => router.navigate("/home")} />
-          ) : (
-            <NoMatch query={query} />
-          )
-        }
         contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
         showsVerticalScrollIndicator={false}
-        // Dragging the list puts the keyboard away rather than fighting it.
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
       />
 
       <CategoryTopicsSheet
@@ -166,15 +146,11 @@ export default function KnowledgeScreen() {
 function Header({
   summary,
   mode,
-  query,
   onToggleMode,
-  onQuery,
 }: {
   summary: KnowledgeSummary;
   mode: ViewMode;
-  query: string;
   onToggleMode: () => void;
-  onQuery: (next: string) => void;
 }) {
   return (
     <>
@@ -204,19 +180,6 @@ function Header({
           )}
         </Pressable>
       </View>
-
-      {/* The app's own search field (design §6), not a second one built here —
-          it already owns the magnifier, the focus ring and the padding a
-          `TextInput` needs on Android. */}
-      <TextField
-        variant="search"
-        value={query}
-        onChangeText={onQuery}
-        placeholder="Search your topics"
-        autoCapitalize="none"
-        returnKeyType="search"
-        accessibilityLabel="Search your saved rounds"
-      />
     </>
   );
 }
@@ -318,38 +281,6 @@ function RoundRow({ round }: { round: KnowledgeRound }) {
   );
 }
 
-// Design §12: the empty state mirrors the real layout instead of replacing it,
-// so the net above stays on screen — 125 unlit dots are exactly what "nothing
-// yet" looks like here — and this sits under it.
-function FirstRun({ onPlay }: { onPlay: () => void }) {
-  return (
-    <View className="items-center gap-2.5 px-5 pt-[30px]">
-      <Text className="text-center text-h3 font-sans-extrabold text-text">
-        No rounds yet
-      </Text>
-
-      <Text className="max-w-[270px] text-center text-body font-sans text-text-secondary">
-        Every topic you explain is saved here with its score, and its dot lights
-        up in the net above.
-      </Text>
-
-      <View className="pt-2.5">
-        <Button label="Draw your first topic" onPress={onPlay} />
-      </View>
-    </View>
-  );
-}
-
-function NoMatch({ query }: { query: string }) {
-  return (
-    <View className="items-center px-5 pt-[30px]">
-      <Text className="max-w-[270px] text-center text-body font-sans text-text-secondary">
-        No saved rounds match “{query.trim()}”
-      </Text>
-    </View>
-  );
-}
-
 function LoadFailed({ onRetry }: { onRetry: () => void }) {
   return (
     <View className="items-center gap-2.5">
@@ -375,20 +306,6 @@ function LoadFailed({ onRetry }: { onRetry: () => void }) {
         </Text>
       </Pressable>
     </View>
-  );
-}
-
-// Matching on the title the row actually shows, so a search never hides a row
-// for a reason the player cannot see on it.
-function matching(
-  rounds: readonly KnowledgeRound[],
-  query: string
-): KnowledgeRound[] {
-  const needle = query.trim().toLowerCase();
-  if (needle === "") return [...rounds];
-
-  return rounds.filter((round) =>
-    round.title.toLowerCase().includes(needle)
   );
 }
 
