@@ -242,6 +242,7 @@ export type Database = {
           points: number
         }[]
       }
+      players_today: { Args: never; Returns: number }
       random_topics: {
         Args: { p_category?: string; p_count?: number }
         Returns: {

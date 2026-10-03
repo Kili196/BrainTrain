@@ -78,7 +78,8 @@ const VARIANTS = {
 // percentage — so the parent measures itself once and passes it in. Width 0 means
 // "not measured yet", and we render nothing rather than a band parked at the left
 // edge.
-function Shimmer({ width }: { width: number }) {
+// Exported for the paywall's button, which wears the same sweep on its own face.
+export function Shimmer({ width }: { width: number }) {
   // useRef, not useState: the Animated.Value must survive re-renders untouched.
   // Recreating it on every render would restart the sweep from the left each time.
   const progress = useRef(new Animated.Value(0)).current;

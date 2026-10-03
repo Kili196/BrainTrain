@@ -639,8 +639,8 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     kind: "outro",
     // The landing ends on a waitlist and three placeholder plans. Neither
     // exists in the app: there is nothing to wait for, and showing prices that
-    // cannot be bought is an App Review risk. The paywall lands here once
-    // RevenueCat is set up.
+    // cannot be bought is an App Review risk. The paywall is its own screen
+    // (`app/paywall.tsx`) and follows this step.
     // Centred like the welcome: the flow opens and closes on a showcase.
     band: "hero",
     cta: "Start",
