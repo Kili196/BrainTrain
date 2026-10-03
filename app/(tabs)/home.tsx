@@ -23,6 +23,7 @@ import { clearOnboarding } from "../../lib/onboarding-storage";
 import { useRoundSession } from "../../lib/round-session";
 import { useRoundStart } from "../../lib/round-start-context";
 import { useGameSettings } from "../../lib/use-game-settings";
+import { useRoundAllowance } from "../../lib/use-round-allowance";
 import { useStreakDays } from "../../lib/use-streak-days";
 import {
   fetchDailyTopic,
@@ -80,6 +81,9 @@ export default function Home() {
   // hook because the Settings tab is a second door to the same values, and this
   // screen stays mounted while that door is used.
   const { settings, update: updateSettings } = useGameSettings();
+
+  // Free players get the daily topic once a day; everything else is Pro.
+  const allowance = useRoundAllowance();
 
   // One value rather than a boolean per sheet: the two are mutually exclusive
   // by construction, so there is no state in which both are open. Stacked
@@ -232,6 +236,14 @@ export default function Home() {
 
       return daily;
     }, "You have learned every topic there is. Nothing new for today.");
+  };
+
+  // A locked choice is still a choice: it goes to the paywall instead of the
+  // reel. Push, so that closing the paywall — or buying — lands back here, where
+  // the allowance re-reads on focus and the same tap now starts the round.
+  const openPaywall = () => {
+    setOpenSheet("none");
+    router.push("/paywall");
   };
 
   const reset = async () => {
@@ -414,8 +426,10 @@ export default function Home() {
         <PlayModeSheet
           visible={openSheet === "mode"}
           dailyUnseen={isDailyUnseen}
-          onStandard={drawStandard}
-          onDaily={drawDaily}
+          standardLocked={!allowance.standard}
+          dailyLocked={!allowance.daily}
+          onStandard={allowance.standard ? drawStandard : openPaywall}
+          onDaily={allowance.daily ? drawDaily : openPaywall}
           onClose={() => setOpenSheet("none")}
         />
 
