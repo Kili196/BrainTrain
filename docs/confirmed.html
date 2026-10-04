@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- The tokens Supabase appends to this URL must never travel on to
+         another site in a Referer header. -->
+    <meta name="referrer" content="no-referrer" />
+    <title>BrainTrain Email Confirmed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Where the link in the signup mail lands. Supabase has already confirmed
+         the address by the time the browser gets here; this page only says so.
+         It works the same whether the mail was opened on the phone or on a
+         computer, which is why it is a web page and not a deep link into the
+         app. -->
+    <main class="centered">
+      <div id="ok">
+        <div class="check" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+        </div>
+        <p class="wordmark">Brain<span>Train</span></p>
+        <h1>Email confirmed</h1>
+        <p>You're all set. Go back to the app and sign in.</p>
+      </div>
+
+      <!-- Shown instead when Supabase redirects with an error, almost always
+           an expired or already-used link. -->
+      <div id="failed" hidden>
+        <p class="wordmark">Brain<span>Train</span></p>
+        <h1>This link no longer works</h1>
+        <p>
+          Confirmation links can only be used once and expire after a while.
+          If you have already confirmed, just sign in in the app. Otherwise,
+          <a href="support.html">get in touch</a> and we'll sort it out.
+        </p>
+      </div>
+    </main>
+
+    <script>
+      // Supabase reports the outcome in the URL: an error in the fragment
+      // (#error=…) for the implicit flow, or in the query (?error=…) for PKCE.
+      // Success carries the new session's tokens in the fragment instead.
+      var hash = new URLSearchParams(location.hash.slice(1));
+      var query = new URLSearchParams(location.search);
+      if (hash.has("error") || query.has("error")) {
+        document.getElementById("ok").hidden = true;
+        document.getElementById("failed").hidden = false;
+      }
+      // This page has no use for the tokens, so they are wiped from the
+      // address bar — otherwise they sit in the browser history and in
+      // anything the address gets copied into.
+      history.replaceState(null, "", location.pathname);
+    </script>
+  </body>
+</html>

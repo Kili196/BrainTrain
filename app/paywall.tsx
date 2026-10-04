@@ -11,6 +11,7 @@ import { PlanCard } from "../components/paywall/PlanCard";
 import { fetchPlayersToday } from "../lib/players-today";
 import { usePurchases } from "../lib/purchases-context";
 import { useToast } from "../lib/toast-context";
+import { WEB_PAGES } from "../lib/web-pages";
 import { colors } from "../theme/colors";
 
 // The paywall, built from Fabian's own design (Paywall Screen.dc.html,
@@ -52,15 +53,10 @@ const COMPARE: { label: string; free: boolean }[] = [
 const ASSURANCES = ["Cancel in two taps", "No ads, ever"];
 
 // Apple requires working Privacy and Terms links on every subscription screen.
-// The pages are the static HTML in docs/, served by GitHub Pages — there is no
-// domain yet. When one comes, this base is the only thing that changes (and the
-// old address should redirect, since store listings point at it too).
-const LEGAL_BASE = "https://kili196.github.io/BrainTrain";
-
-const LEGAL: { label: string; url: string | null }[] = [
-  { label: "Privacy", url: `${LEGAL_BASE}/privacy.html` },
-  { label: "Terms of Use", url: `${LEGAL_BASE}/terms.html` },
-  { label: "Support", url: `${LEGAL_BASE}/support.html` },
+const LEGAL: { label: string; url: string }[] = [
+  { label: "Privacy", url: WEB_PAGES.privacy },
+  { label: "Terms of Use", url: WEB_PAGES.terms },
+  { label: "Support", url: WEB_PAGES.support },
 ];
 
 type PlanId = "yearly" | "monthly";
@@ -396,9 +392,7 @@ export default function PaywallScreen() {
               <View key={link.label} className="flex-row items-center gap-3">
                 <View className="h-2.5 w-px bg-border-modal" />
                 <Pressable
-                  onPress={() => {
-                    if (link.url) void Linking.openURL(link.url);
-                  }}
+                  onPress={() => void Linking.openURL(link.url)}
                   hitSlop={8}
                   accessibilityRole="link"
                   accessibilityLabel={link.label}
