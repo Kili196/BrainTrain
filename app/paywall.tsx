@@ -52,12 +52,15 @@ const COMPARE: { label: string; free: boolean }[] = [
 const ASSURANCES = ["Cancel in two taps", "No ads, ever"];
 
 // Apple requires working Privacy and Terms links on every subscription screen.
-// The pages do not exist yet — until they do, these render but go nowhere, and
-// that has to be fixed before any store submission.
+// The pages are the static HTML in docs/, served by GitHub Pages — there is no
+// domain yet. When one comes, this base is the only thing that changes (and the
+// old address should redirect, since store listings point at it too).
+const LEGAL_BASE = "https://kili196.github.io/BrainTrain";
+
 const LEGAL: { label: string; url: string | null }[] = [
-  { label: "Privacy", url: null },
-  { label: "Terms of Use", url: null },
-  { label: "Support", url: null },
+  { label: "Privacy", url: `${LEGAL_BASE}/privacy.html` },
+  { label: "Terms of Use", url: `${LEGAL_BASE}/terms.html` },
+  { label: "Support", url: `${LEGAL_BASE}/support.html` },
 ];
 
 type PlanId = "yearly" | "monthly";

@@ -1,0 +1,142 @@
+/* Shared by the three legal pages (privacy, terms, support), served from
+   GitHub Pages. They live outside the app, so they cannot import
+   theme/colors.js — the values below are copied from it by hand. If the app's
+   palette moves again, update these to match; the rest of the file is layout. */
+:root {
+  --bg: #0b0b0b;
+  --card: rgba(255, 255, 255, 0.045);
+  --border: rgba(255, 255, 255, 0.09);
+  --divider: rgba(255, 255, 255, 0.08);
+  --accent-light: #77b0fc;
+  --text: #ffffff;
+  --text-strong: #e8e8e8;
+  --text-secondary: #8a8a8a;
+  --text-faint: #5f5f5f;
+  --warning: #d59922;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font: 400 15px/1.65 "Archivo", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* One narrow reading column: these pages are opened from a phone more often
+   than not (the paywall links straight here), so the phone width is the
+   design and the desktop just gets margins. */
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+}
+
+.eyebrow {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+h1 {
+  color: var(--text);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.015em;
+  margin: 0 0 10px;
+  text-wrap: pretty;
+}
+
+h2 {
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0;
+  padding-top: 34px;
+  text-wrap: pretty;
+}
+
+/* Divider rows rather than cards, as in the app: each section is separated
+   by a hairline, not boxed. */
+section + section h2 {
+  border-top: 1px solid var(--divider);
+  margin-top: 34px;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+strong {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+a {
+  color: var(--accent-light);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+li + li {
+  margin-top: 6px;
+}
+
+.updated {
+  color: var(--text-faint);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+/* The one filled block per page: the short version, above the long one. */
+.summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-top: 30px;
+}
+
+.summary ul {
+  margin: 0;
+}
+
+address {
+  font-style: normal;
+}
+
+/* Marks text that is still a stand-in and must be replaced before release.
+   Deliberately loud so it cannot slip through unnoticed. */
+.todo {
+  color: var(--warning);
+  font-weight: 700;
+}
+
+nav {
+  display: flex;
+  gap: 20px;
+  margin-top: 46px;
+  padding-top: 20px;
+  border-top: 1px solid var(--divider);
+  font-size: 13px;
+  font-weight: 700;
+}
