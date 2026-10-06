@@ -7,7 +7,7 @@ Hand this file to whatever writes the questions, together with
 
 ## 1. What the questions are for
 
-BrainTrain is a speaking trainer. The player is given a topic, prepares, speaks
+Aloud is a speaking trainer. The player is given a topic, prepares, speaks
 freely about it for a set time, and only then answers questions about it.
 
 So the questions are **not a trivia round**. They check whether the speaker
