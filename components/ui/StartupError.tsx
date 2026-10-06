@@ -31,7 +31,7 @@ export type StartupErrorProps = {
 const COPY = {
   offline: {
     headline: "No connection",
-    body: "BrainTrain needs the internet once, to set up your account. After that it remembers you.",
+    body: "Aloud needs the internet once, to set up your account. After that it remembers you.",
   },
   rejected: {
     headline: "Can't start",

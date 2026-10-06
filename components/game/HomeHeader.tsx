@@ -20,14 +20,14 @@ export function HomeHeader({ streakDays, hasNewChallenge }: HomeHeaderProps) {
 
   return (
     <View className="gap-6 border-b border-divider pb-6">
-      {/* Two colours in one line of text, so it stays one word: BRAIN in
-          white, TRAIN in the accent. */}
+      {/* Two colours in one line of text, so it stays one word: A in
+          white, LOUD in the accent. */}
       <Text
         className="text-center text-h3 font-sans-extrabold uppercase text-text"
         style={{ letterSpacing: 2.4 }}
       >
-        Brain
-        <Text className="text-accent-light">Train</Text>
+        A
+        <Text className="text-accent-light">loud</Text>
       </Text>
 
       <View className="flex-row items-center">

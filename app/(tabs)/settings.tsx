@@ -37,7 +37,7 @@ import { colors } from "../../theme/colors";
 // setup, and the first caller of `delete_own_account()`, which has been in the
 // database unused since the init schema.
 
-// The mockup prints "BrainTrain 1.0.4". That number is invented; this reads the
+// The mockup prints "Aloud 1.0.4". That number is invented; this reads the
 // real one out of app.json, so it cannot drift from what was built.
 const VERSION = Constants.expoConfig?.version ?? "—";
 
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
   };
 
   const sendFeedback = () => {
-    const url = `mailto:${FEEDBACK_EMAIL}?subject=BrainTrain%20${VERSION}`;
+    const url = `mailto:${FEEDBACK_EMAIL}?subject=Aloud%20${VERSION}`;
 
     // `openURL` rejects when no mail client is installed, which is common
     // enough on a simulator to be worth saying out loud rather than logging.
@@ -196,7 +196,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Text className="mt-8 px-5 text-caption font-sans text-text-disabled">
-          BrainTrain {VERSION}
+          Aloud {VERSION}
         </Text>
       </ScrollView>
 

@@ -6,7 +6,7 @@ Guidance for Claude Code in this repo. Keep it short — add a rule here only on
 
 A cross-platform mobile app for **iOS and Android**, built with **React Native + Expo** in **TypeScript**.
 
-- **App name:** BrainTrain
+- **App name:** Aloud
 - **What it does:** A speaking-and-knowledge trainer — you draw a topic, get prep time, record yourself speaking about it, then answer a 5-question quiz; the app analyses and scores the round.
 
 ## Stack (confirmed)
@@ -144,7 +144,7 @@ Not set up yet (no EAS config). Ask before adding build/submit profiles or a rel
 
 # UI / Visual Design System
 
-Source of truth for all future UI work in BrainTrain. Reverse-engineered from the
+Source of truth for all future UI work in Aloud. Reverse-engineered from the
 existing screens (`*.dc.html`). Do not invent new values — everything below is
 taken from the shipped design.
 
