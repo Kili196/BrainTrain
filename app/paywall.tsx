@@ -164,7 +164,7 @@ export default function PaywallScreen() {
     setBusy(false);
 
     if (outcome === "purchased") {
-      toast.show("Welcome to BrainTrain Pro");
+      toast.show("Welcome to Aloud Pro");
       leave();
     } else if (outcome === "error") {
       toast.show("The purchase didn't go through — try again");
@@ -213,7 +213,7 @@ export default function PaywallScreen() {
         <View className="gap-3.5 px-5">
           <View className="flex-row items-center justify-between gap-4">
             <Text className="text-eyebrow font-sans-extrabold uppercase tracking-eyebrow text-text-faint">
-              BrainTrain Pro
+              Aloud Pro
             </Text>
             <Pressable
               onPress={leave}

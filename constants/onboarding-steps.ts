@@ -251,7 +251,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     band: "hero",
     cta: "Let's go",
     greeting: "Welcome to",
-    appName: "BrainTrain",
+    appName: "Aloud",
     headline: "The brainrot stops now.",
     body: "One topic a day, sixty seconds out loud. Setting it up takes two minutes.",
   },
