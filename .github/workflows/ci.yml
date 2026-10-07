@@ -1,0 +1,28 @@
+name: CI
+
+# TypeScript strict is this project's only automated safety net — there is no
+# lint or test setup yet (see CLAUDE.md). So the one thing CI has to guarantee
+# is that a fresh checkout still typechecks: `npm ci` installs cleanly from the
+# lockfile (which is exactly what caught a stale, build-breaking node_modules
+# that a plain `npm install` on an old tree had hidden), then `tsc --noEmit`.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Node 22 the README pins for local work, so CI and a
+          # developer's machine resolve the same dependency tree.
+          node-version: 22
+          cache: npm
+      # `npm ci`, not `npm install`: it installs strictly from package-lock.json
+      # and fails if the lockfile and package.json disagree — the state we want
+      # to catch here rather than on someone's machine after a sync.
+      - run: npm ci
+      - run: npm run typecheck
