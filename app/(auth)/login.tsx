@@ -98,9 +98,16 @@ export default function LoginScreen() {
   const showApple = Platform.OS === "ios";
   const appleAvailable = FEATURES.appleSignIn && showApple;
 
-  // Google needs a custom dev build — it's absent in Expo Go. Its button stays
-  // visible when unavailable (a tap explains why); only Apple is hidden off-iOS,
-  // since it's a whole platform's worth of missing, not a build-time gap.
+  // Google is hidden on iOS, for two reasons that point the same way. The iOS
+  // OAuth flow needs a reversed client ID in app.json that isn't set yet (the
+  // `iosUrlScheme` TODO), without which the sign-in sheet can't hand control
+  // back to the app; and App Store Guideline 4.8 won't allow a third-party
+  // login like Google unless Sign in with Apple is offered alongside it, which
+  // is still behind FEATURES.appleSignIn. Until both are resolved, iOS signs in
+  // with Apple (once enabled), email or guest; Android keeps Google. Off iOS the
+  // button still shows even when the native module is absent (Expo Go), where a
+  // tap explains it needs a custom dev build.
+  const showGoogle = Platform.OS !== "ios";
 
   const onApple = () => {
     if (busy) return;
@@ -199,9 +206,10 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Provider buttons, side by side. Apple only appears on iOS — on
-              Android it's a capability the device doesn't have, so Google (which
-              is flex-1) simply fills the row on its own. */}
+          {/* One provider button, filling the row: Apple on iOS, Google on
+              Android. They're mutually exclusive now — Apple is an iOS-only
+              capability, and Google is hidden on iOS (see showGoogle above) —
+              so the row holds exactly one, and its flex-1 child spans it. */}
           <View className="mt-7 flex-row gap-3">
             {showApple ? (
               <ProviderButton
@@ -213,14 +221,16 @@ export default function LoginScreen() {
                 onPress={onApple}
               />
             ) : null}
-            <ProviderButton
-              icon={<GoogleIcon size={17} color={colors.text.DEFAULT} />}
-              label="Google"
-              busyLabel="Signing in…"
-              pending={pending === "google"}
-              dimmed={busy || !isGoogleSignInAvailable}
-              onPress={onGoogle}
-            />
+            {showGoogle ? (
+              <ProviderButton
+                icon={<GoogleIcon size={17} color={colors.text.DEFAULT} />}
+                label="Google"
+                busyLabel="Signing in…"
+                pending={pending === "google"}
+                dimmed={busy || !isGoogleSignInAvailable}
+                onPress={onGoogle}
+              />
+            ) : null}
           </View>
 
           {/* OR EMAIL divider. */}
