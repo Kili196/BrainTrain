@@ -67,7 +67,9 @@ export default function EditProfileScreen() {
   }, [load]);
 
   const save = async () => {
-    if (name === null || !countryCode) return;
+    // A name and a country, the same two onboarding requires. The guard mirrors
+    // the button's `disabled` below so a stray call can't slip past it.
+    if (!name?.trim() || !countryCode) return;
 
     setSaving(true);
 
@@ -172,9 +174,12 @@ export default function EditProfileScreen() {
             <View className="pt-5">
               <Button
                 label={saving ? "Saving…" : "Save"}
-                // A name can be emptied — onboarding allows one too, and the
-                // column is nullable — so the country is the only requirement.
-                disabled={!countryCode || saving}
+                // A name and a country are both required, the same as onboarding
+                // (its name step keeps CONTINUE disabled until there is a name).
+                // The column is nullable and the leaderboard has a "New player"
+                // fallback, but that is for the gap before onboarding writes a
+                // name — not a name a player is allowed to clear after the fact.
+                disabled={!name?.trim() || !countryCode || saving}
                 onPress={() => void save()}
               />
             </View>

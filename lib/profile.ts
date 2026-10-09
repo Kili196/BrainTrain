@@ -89,8 +89,10 @@ export async function saveProfile(
   data: OnboardingData
 ): Promise<void> {
   const update: ProfileUpdate = {
-    // Nullable in the table, and the name step allows an empty one. "" would be
-    // a name that renders as nothing; null is the absence of one.
+    // Onboarding's name step keeps CONTINUE disabled until there is a name, so
+    // this is never actually empty here — the `|| null` is a safety net, not a
+    // supported path. "" would be a name that renders as nothing; null is the
+    // honest absence of one, and the column is nullable.
     display_name: data.name.trim() || null,
     country_code: data.countryCode.toUpperCase(),
     birth_date: toIsoDate(data.birth),
@@ -110,8 +112,9 @@ export async function updateProfileDetails(
   details: { name: string; countryCode: string }
 ): Promise<void> {
   const update: ProfileUpdate = {
-    // Same rule as onboarding: "" is a name that renders as nothing, null is
-    // the absence of one, and the column is nullable.
+    // Same rule as onboarding: a name is required, enforced by the edit screen's
+    // disabled Save. The `|| null` is the same safety net as `saveProfile` — ""
+    // renders as nothing, null is the honest absence, and the column is nullable.
     display_name: details.name.trim() || null,
     country_code: details.countryCode.toUpperCase(),
   };
