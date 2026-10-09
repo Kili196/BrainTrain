@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { categoryName } from "../../constants/categories";
 import { countries } from "../../constants/countries";
 import { useUserId } from "../../lib/auth-context";
+import { formatPoints, monthAndYear } from "../../lib/format";
 import { fetchProfile, type Profile } from "../../lib/profile";
 import {
   fetchRoundStats,
@@ -341,35 +342,4 @@ function ageFrom(birthDate: string | null): number | null {
     thisMonth > month || (thisMonth === month && today.getDate() >= day);
 
   return today.getFullYear() - year - (hadBirthday ? 0 : 1);
-}
-
-// Written out rather than `toLocaleDateString`: Intl follows the phone's locale,
-// which would drop a German month name into an otherwise English line.
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function monthAndYear(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-// Grouped the way the mockup draws "2 480". `Intl.NumberFormat` would follow the
-// phone's locale and put a German dot into an English UI; a narrow no-break
-// space is also the one separator that cannot be misread as a decimal point.
-function formatPoints(points: number): string {
-  return String(points).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }

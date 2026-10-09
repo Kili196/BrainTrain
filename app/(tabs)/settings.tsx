@@ -41,10 +41,9 @@ import { colors } from "../../theme/colors";
 // real one out of app.json, so it cannot drift from what was built.
 const VERSION = Constants.expoConfig?.version ?? "—";
 
-// TODO: change before release. Kept as its own constant rather than inlined so
-// there is one place to put a real address, and a dead mailto is visible here
-// rather than hidden in a handler.
-const FEEDBACK_EMAIL = "feedback@braintrain.app";
+// The support inbox. Kept as its own constant rather than inlined so there is
+// one place to change the address, rather than it being hidden in a handler.
+const FEEDBACK_EMAIL = "Support.aloud@gmail.com";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();

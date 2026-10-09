@@ -4,6 +4,7 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BobbingDots } from "../../components/ui/BobbingDots";
+import { formatPoints } from "../../lib/format";
 import {
   displayNameOf,
   fetchLeaderboard,
@@ -356,10 +357,4 @@ function LoadFailed({ onRetry }: { onRetry: () => void }) {
       </Pressable>
     </View>
   );
-}
-
-// Thin spaces between thousands, the way the mockup writes "4 820" — the same
-// rule the profile screen uses for the same number.
-function formatPoints(points: number): string {
-  return String(points).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }

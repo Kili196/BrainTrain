@@ -10,6 +10,7 @@ import { CategoryTopicsSheet } from "../../components/knowledge/CategoryTopicsSh
 import { KnowledgeNet } from "../../components/knowledge/KnowledgeNet";
 import { BobbingDots } from "../../components/ui/BobbingDots";
 import { useUserId } from "../../lib/auth-context";
+import { dayAndMonth } from "../../lib/format";
 import {
   fetchKnowledge,
   type KnowledgeCategory,
@@ -313,29 +314,4 @@ function share(part: number, whole: number): number {
   if (whole <= 0) return 0;
 
   return Math.round((part / whole) * 100);
-}
-
-// Written out rather than `toLocaleDateString`, for the same reason
-// `profile.tsx` writes its own: Intl follows the phone's locale and would drop
-// a German month into an otherwise English line.
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function dayAndMonth(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
