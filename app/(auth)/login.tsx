@@ -25,10 +25,8 @@ import { colors } from "../../theme/colors";
 // here whenever `useAuth().status === "signed-out"`.
 //
 // Google, Apple, "continue as guest" and now email/password all sign in here.
-// "Create an account" pushes the sibling /signup screen. The one control still
-// standing in for an unbuilt flow is "Forgot password?", which explains itself
-// with a toast rather than pretending to work — password reset is a separate
-// screen with its own emailed-link handling, deferred for now.
+// "Create an account" pushes the sibling /signup screen, "Forgot password?" the
+// sibling /reset-password screen.
 //
 // This screen never navigates on success. Signing in flips `status` to "ready"
 // through the `onAuthStateChange` listener in auth-context.tsx, and the effect
@@ -160,13 +158,6 @@ export default function LoginScreen() {
     }
   };
 
-  // The one visual-only control left (Forgot password?) lands here: no auth,
-  // just an honest toast.
-  const comingSoon = (message: string) => () => {
-    if (busy) return;
-    toast.show(message);
-  };
-
   return (
     <View className="flex-1 bg-bg">
       <LoginBackdrop />
@@ -269,7 +260,14 @@ export default function LoginScreen() {
           </View>
 
           <Pressable
-            onPress={comingSoon("Password reset is coming soon")}
+            onPress={() => {
+              if (busy) return;
+              // Hands over what's already typed, so it needn't be typed twice.
+              router.push({
+                pathname: "/reset-password",
+                params: { email: email.trim() },
+              });
+            }}
             accessibilityRole="button"
             accessibilityLabel="Forgot password?"
             className="mt-3 self-end active:opacity-60"
