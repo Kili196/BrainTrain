@@ -20,6 +20,7 @@ import {
 } from "./auth-providers";
 import { clearOnboarding } from "./onboarding-storage";
 import { supabase } from "./supabase";
+import { WEB_PAGES } from "./web-pages";
 
 // The account, established once at startup and held for the whole app.
 //
@@ -172,7 +173,13 @@ async function signUpWithEmail(
   email: string,
   password: string
 ): Promise<EmailSignUpResult> {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  // The mail's link lands on a web page, not in the app: it has to work when
+  // the mail is opened on a computer too, where a deep link goes nowhere.
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: WEB_PAGES.emailConfirmed },
+  });
   // Supabase refuses a malformed address with `validation_failed` and a
   // well-formed but blocked one (test@…, example.com) with
   // `email_address_invalid` — to the player both mean "fix the address".
