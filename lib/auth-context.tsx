@@ -79,6 +79,25 @@ export type EmailSignInResult =
   | { outcome: "unconfirmed" }
   | { outcome: "error"; detail: string };
 
+// Password reset is two calls with a 6-digit code in between, typed by the
+// player, rather than a link: a link would need a web page that can set a
+// password, and it would have to work when the mail is opened on a computer.
+// The code works anywhere and keeps the whole flow inside the app.
+//
+// "sent" does not mean an account exists. Supabase answers an unknown address
+// with the same success on purpose, so the screen can't be used to probe which
+// addresses are registered — and neither can this type.
+export type PasswordResetRequestResult =
+  | { outcome: "sent" }
+  | { outcome: "invalid-email" }
+  | { outcome: "rate-limited" }
+  | { outcome: "error"; detail: string };
+
+export type PasswordResetResult =
+  | { outcome: "success" }
+  | { outcome: "wrong-code" }
+  | { outcome: "error"; detail: string };
+
 export type AuthApi = {
   status: AuthStatus;
   // Null only while loading, signed out, or after a failure; inside the app
@@ -94,6 +113,12 @@ export type AuthApi = {
   // no "cancelled" without a native sheet). Sign-up carries the extra
   // confirm-email outcome above.
   signInWithEmail: (email: string, password: string) => Promise<EmailSignInResult>;
+  requestPasswordReset: (email: string) => Promise<PasswordResetRequestResult>;
+  resetPassword: (
+    email: string,
+    code: string,
+    newPassword: string
+  ) => Promise<PasswordResetResult>;
   signUpWithEmail: (email: string, password: string) => Promise<EmailSignUpResult>;
   // Ends the session and clears the device-local onboarding flag, so the next
   // guest re-onboards instead of the app assuming the last player's profile.
@@ -204,6 +229,56 @@ async function signUpWithEmail(
   return data.session
     ? { outcome: "signed-in" }
     : { outcome: "confirm-email" };
+}
+
+// Step one of a password reset: mail the player a code. Needs the "Reset
+// Password" email template to show `{{ .Token }}` (the code) instead of the
+// default `{{ .ConfirmationURL }}` (a link) — that is a dashboard setting, not
+// code.
+async function requestPasswordReset(
+  email: string
+): Promise<PasswordResetRequestResult> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (!error) return { outcome: "sent" };
+  if (error.code === "validation_failed" || error.code === "email_address_invalid") {
+    return { outcome: "invalid-email" };
+  }
+  if (error.code === "over_email_send_rate_limit") return { outcome: "rate-limited" };
+  return { outcome: "error", detail: describe(error).detail };
+}
+
+// Step two: trade the code for a session, then set the new password on it.
+//
+// The order is forced, and it has a consequence. `verifyOtp` signs the player
+// in, the listener flips `status` to "ready", and the login screen underneath
+// navigates home — possibly before `updateUser` below has answered. So the
+// screen must validate the new password BEFORE calling this, because an error
+// from `updateUser` may arrive after it has already unmounted. The promise
+// itself survives the navigation; it lives here, not in the component.
+async function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<PasswordResetResult> {
+  const verified = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: "recovery",
+  });
+  if (verified.error) {
+    // Supabase answers a wrong code and an expired one alike.
+    if (verified.error.code === "otp_expired") return { outcome: "wrong-code" };
+    return { outcome: "error", detail: describe(verified.error).detail };
+  }
+
+  const updated = await supabase.auth.updateUser({ password: newPassword });
+  // `same_password` means the player typed their old password as the new one.
+  // They are signed in and know a working password, which is all a reset is
+  // for — so that counts as success, not as an error to show.
+  if (updated.error && updated.error.code !== "same_password") {
+    return { outcome: "error", detail: describe(updated.error).detail };
+  }
+  return { outcome: "success" };
 }
 
 async function signOut(): Promise<void> {
@@ -351,6 +426,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       continueAsGuest,
       signInWithEmail,
       signUpWithEmail,
+      requestPasswordReset,
+      resetPassword,
       signOut,
       deleteAccount,
     }),
