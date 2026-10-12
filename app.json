@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "BrainTrain",
-    "slug": "braintrain",
+    "name": "Aloud",
+    "slug": "aloud",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.braintrain.app",
+      "bundleIdentifier": "com.aloud.app",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "BrainTrain transcribes your speech on-device so it can be shown back and later analysed.",
-        "NSMicrophoneUsageDescription": "BrainTrain uses the microphone to transcribe what you say during a speaking round."
+        "NSSpeechRecognitionUsageDescription": "Aloud transcribes your speech on-device so it can be shown back and later analysed.",
+        "NSMicrophoneUsageDescription": "Aloud uses the microphone to transcribe what you say during a speaking round."
       }
     },
     "android": {
-      "package": "com.braintrain.app",
+      "package": "com.aloud.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -30,15 +30,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "braintrain",
+    "scheme": "aloud",
     "plugins": [
       "expo-router",
       "expo-font",
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "BrainTrain uses the microphone to transcribe what you say during a speaking round.",
-          "speechRecognitionPermission": "BrainTrain transcribes your speech on-device so it can be shown back and later analysed.",
+          "microphonePermission": "Aloud uses the microphone to transcribe what you say during a speaking round.",
+          "speechRecognitionPermission": "Aloud transcribes your speech on-device so it can be shown back and later analysed.",
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox"
           ]

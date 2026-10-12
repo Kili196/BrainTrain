@@ -108,8 +108,8 @@ export default function SignUpScreen() {
             className="text-center text-h3 font-sans-extrabold uppercase text-text"
             style={{ letterSpacing: 2.4 }}
           >
-            Brain
-            <Text className="text-accent-light">Train</Text>
+            A
+            <Text className="text-accent-light">loud</Text>
           </Text>
 
           {/* Eyebrow + heading, left-aligned (design §10). */}

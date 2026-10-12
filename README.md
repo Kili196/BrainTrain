@@ -1,4 +1,4 @@
-# BrainTrain
+# Aloud
 
 A cross-platform app for iOS and Android — React Native + Expo (managed workflow)
 in TypeScript, with Supabase as the backend.
@@ -117,12 +117,12 @@ Supabase dashboard need to be told about each other:
      `.env` as `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. This is the one Supabase checks the ID
      token's audience against — see the comment above it in `.env.example`. This is the
      only one of the three referenced anywhere in the app's code or config.
-   - **iOS** — bundle ID `com.braintrain.app`. Take its client ID, reverse it (e.g.
+   - **iOS** — bundle ID `com.aloud.app`. Take its client ID, reverse it (e.g.
      `1234-abc.apps.googleusercontent.com` → `com.googleusercontent.apps.1234-abc`), and
      paste that into the `iosUrlScheme` TODO in `app.json`'s `@react-native-google-signin/google-signin`
      plugin config. Without this, iOS never returns control to the app after the sign-in
      sheet closes.
-   - **Android** — package name `com.braintrain.app`, plus the SHA-1 fingerprint of the
+   - **Android** — package name `com.aloud.app`, plus the SHA-1 fingerprint of the
      signing certificate (get it from `eas credentials`, or `./gradlew signingReport` for
      a local debug build). Nothing from this one goes into `.env` or `app.json` either —
      Google's servers use it purely to check that the app calling in is really this app,
