@@ -179,7 +179,15 @@ offers a third-party login like Google. Review rejects otherwise.
 
 ## 🟠 P1 — Important before release
 
-### [ ] 8. Leaderboard can be faked — **C**
+### [x] 8. Leaderboard can be faked — **C**
+
+> **Done 2026-10-26** — `20261026190000_guard_speech_sessions.sql`, pushed to the
+> live DB. Server-set `created_at`; max 30 rounds per player per UTC day; a saved
+> round's score/identity/dates can't be updated (upsert retries with identical
+> values still pass). Tested as a real user in a rolled-back transaction: retry
+> ok, score bump rejected, 31st round rejected, backdated `created_at` overwritten.
+> A real round from the preview build saved afterwards. Residual: delete + re-insert
+> still allows up to 30×100 points/day — bounded, not prevented.
 
 **Problem.** Leaderboard points are `sum(coalesce(quiz_score, 0))` over
 `speech_sessions` (`supabase/migrations/20260913180000_add_leaderboard.sql`).
