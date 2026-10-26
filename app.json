@@ -7,10 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.aloud.app",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Aloud transcribes your speech on-device so it can be shown back and later analysed.",
+        "NSSpeechRecognitionUsageDescription": "Aloud turns your speech into text using your phone's speech recognition, so you can see what you said.",
         "NSMicrophoneUsageDescription": "Aloud uses the microphone to transcribe what you say during a speaking round."
       }
     },
@@ -38,7 +38,7 @@
         "expo-speech-recognition",
         {
           "microphonePermission": "Aloud uses the microphone to transcribe what you say during a speaking round.",
-          "speechRecognitionPermission": "Aloud transcribes your speech on-device so it can be shown back and later analysed.",
+          "speechRecognitionPermission": "Aloud turns your speech into text using your phone's speech recognition, so you can see what you said.",
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox"
           ]
