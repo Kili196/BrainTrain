@@ -8,15 +8,17 @@ import { colors } from "../../theme/colors";
 //
 // This is the app's fourth looping animation, where CLAUDE.md §13 named three
 // (streak flame, PLAY shimmer, analysis orbit). It earns the exception the same
-// way they do: it marks something alive. A frozen waveform on a screen that
-// says RECORDING reads as broken, not as honest — the honesty lives in the line
-// at the bottom of the screen, which says plainly that no microphone is
-// listening yet.
+// way they do: it marks something alive — and since it follows the microphone,
+// it only moves while someone is actually speaking.
+//
+// The shape is not the signal. The recognizer only reports one loudness number
+// ten times a second, not a spectrum, so the row's shape still comes from the
+// loop below and `level` decides how far it opens: silent lies flat at
+// MIN_SCALE, a normal voice opens it fully.
 //
 // Nothing here is random. Every amplitude comes out of two sines of the bar's
 // index, so the pattern is identical on every run and on both platforms — a
 // waveform redrawn from Math.random() on each frame flickers instead of moving.
-// When the microphone lands, `amplitude` is what it replaces.
 //
 // Two things keep it smooth, and both were fixes rather than plans:
 //
@@ -54,12 +56,18 @@ function amplitude(bar: number, phase: number): number {
 }
 
 export type WaveformProps = {
-  // Paused freezes the bars where a still frame of the loop leaves them, rather
-  // than collapsing them — the recording is held, not gone.
+  // Stops the loop. While paused the recognizer is off too, so `level` falls
+  // to 0 and the bars lie flat — nothing is being heard.
   running: boolean;
+  // Microphone loudness, 0 to 1, from useSpeechTranscript. Animated rather
+  // than a number so ten updates a second never re-render this row.
+  level: Animated.Value;
 };
 
-export const Waveform = memo(function Waveform({ running }: WaveformProps) {
+export const Waveform = memo(function Waveform({
+  running,
+  level,
+}: WaveformProps) {
   const reduceMotion = useReduceMotion();
   const still = !running || reduceMotion;
 
@@ -98,19 +106,28 @@ export const Waveform = memo(function Waveform({ running }: WaveformProps) {
           amplitude(bar, phase)
         );
 
+        // How far above the floor the bar may open, before the voice decides
+        // how much of that it gets.
+        const open = cycles[bar % cycles.length].interpolate({
+          inputRange: Array.from({ length: PHASES + 1 }, (_, i) => i / PHASES),
+          // Closing on the opening value, so the loop has no seam.
+          outputRange: [...points, points[0]].map((p) => p - MIN_SCALE),
+        });
+
         return {
-          rest: points[0],
-          scale: cycles[bar % cycles.length].interpolate({
-            inputRange: Array.from({ length: PHASES + 1 }, (_, i) => i / PHASES),
-            // Closing on the opening value, so the loop has no seam.
-            outputRange: [...points, points[0]],
-          }),
+          // Reduced motion keeps the voice but drops the loop: one fixed
+          // shape that only rises and falls with loudness.
+          rest: Animated.add(
+            MIN_SCALE,
+            Animated.multiply(level, points[0] - MIN_SCALE)
+          ),
+          scale: Animated.add(MIN_SCALE, Animated.multiply(open, level)),
           // Slight variation across the row so it does not read as a printed
           // pattern. Deterministic, like the amplitudes.
           opacity: 0.45 + 0.35 * Math.abs(Math.sin(bar * 0.8)),
         };
       }),
-    [cycles]
+    [cycles, level]
   );
 
   return (

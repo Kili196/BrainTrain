@@ -28,8 +28,8 @@ import { colors } from "../theme/colors";
 // recognizer along with the clock. Because it is a native module it does NOT
 // run in Expo Go — a custom dev build is required.
 //
-// The waveform is still a fixed pattern rather than a real signal. The
-// transcript is stamped into the round on the way out and saved with it on the
+// The waveform follows the microphone's loudness, so it only moves while
+// someone speaks. The transcript is stamped into the round on the way out and saved with it on the
 // result screen; analysing it is still to come.
 const RING_SIZE = 230;
 const RING_STROKE = 8;
@@ -69,7 +69,7 @@ export default function Recording() {
 
   // The live on-device transcript. `start` also requests the mic/speech
   // permission the first time it runs.
-  const { transcript, status, errorMessage, start, stop } =
+  const { transcript, status, errorMessage, level, start, stop } =
     useSpeechTranscript();
 
   const { finishSpeaking } = useRoundSession();
@@ -281,7 +281,7 @@ export default function Recording() {
           </View>
         </ProgressRing>
 
-        <Waveform running={!paused} />
+        <Waveform running={!paused} level={level} />
 
         <Pressable
           onPress={togglePause}

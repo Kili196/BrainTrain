@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Animated } from "react-native";
 
 // On-device speech-to-text for the recording screen.
 //
@@ -33,6 +34,15 @@ const speech: SpeechModule | null = (() => {
 // state between takes.
 export type TranscriptStatus = "idle" | "listening" | "denied" | "error";
 
+// The recognizer reports loudness from -2 to 10, anything below 0 being
+// silence. Normal speech into a phone peaks around 7 — mapping that to 1 lets
+// an ordinary voice fill the waveform instead of only shouting doing so.
+const VOLUME_FULL = 7;
+
+// The recognizer emits every 100ms, so each step glides over exactly that gap:
+// the bars move continuously instead of jumping ten times a second.
+const VOLUME_STEP_MS = 100;
+
 export function useSpeechTranscript() {
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState<TranscriptStatus>("idle");
@@ -45,7 +55,13 @@ export function useSpeechTranscript() {
   // half-heard guess would stick around after it was corrected.
   const finalRef = useRef("");
 
-  // All four listeners in one subscription rather than through the package's
+  // How loud the microphone is right now, 0 (silent) to 1. An Animated.Value
+  // rather than state: it changes ten times a second, and as state each change
+  // would re-render the whole recording screen. This way it goes straight to
+  // the native driver and React never sees it.
+  const level = useRef(new Animated.Value(0)).current;
+
+  // All five listeners in one subscription rather than through the package's
   // useSpeechRecognitionEvent, which would re-introduce the very import avoided
   // above. Each addListener is called with a literal event name, so every
   // payload below is typed by the recognizer's own event map. They are set up
@@ -61,11 +77,22 @@ export function useSpeechTranscript() {
 
       // "end" fires on a normal stop as well as after an error; don't let it
       // clobber a denied/error status we want to keep showing.
-      recognizer.addListener("end", () =>
+      recognizer.addListener("end", () => {
         setStatus((prev) =>
           prev === "denied" || prev === "error" ? prev : "idle"
-        )
-      ),
+        );
+        // No more volume events will come, so the last one would otherwise
+        // hold the bars up for as long as the recognizer stays off.
+        level.setValue(0);
+      }),
+
+      recognizer.addListener("volumechange", (event) => {
+        Animated.timing(level, {
+          toValue: Math.min(1, Math.max(0, event.value / VOLUME_FULL)),
+          duration: VOLUME_STEP_MS,
+          useNativeDriver: true,
+        }).start();
+      }),
 
       recognizer.addListener("result", (event) => {
         const latest = event.results[0]?.transcript ?? "";
@@ -88,7 +115,7 @@ export function useSpeechTranscript() {
     ];
 
     return () => subscriptions.forEach((subscription) => subscription.remove());
-  }, []);
+  }, [level]);
 
   const start = useCallback(async () => {
     setErrorMessage(null);
@@ -119,6 +146,12 @@ export function useSpeechTranscript() {
       // silence, so one take is one continuous transcript.
       continuous: true,
       addsPunctuation: true,
+      // Off by default. The waveform is driven by it, so the bars move when
+      // someone speaks and lie flat when nobody does.
+      volumeChangeEventOptions: {
+        enabled: true,
+        intervalMillis: VOLUME_STEP_MS,
+      },
     });
   }, []);
 
@@ -135,5 +168,5 @@ export function useSpeechTranscript() {
   // drops it without waiting for a final result. Safe to call when idle.
   useEffect(() => () => speech?.ExpoSpeechRecognitionModule.abort(), []);
 
-  return { transcript, status, errorMessage, start, stop, reset };
+  return { transcript, status, errorMessage, level, start, stop, reset };
 }
