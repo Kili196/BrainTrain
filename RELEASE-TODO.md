@@ -38,6 +38,10 @@ Owner legend: **F** = Fabian, **K** = Kili, **C** = Claude (code change, on requ
 
 ### [ ] 1. Production env vars on EAS — **F** (+ C for the RevenueCat part, see #2)
 
+> **2026-10-26:** Supabase URL, anon key and Google web client ID created on EAS
+> for `preview` **and** `production`; `eas.json` names the environment per profile.
+> Still missing: the two RevenueCat store keys (after #3).
+
 **Problem.** `npx eas-cli env:list --environment production` returns
 "No variables found for this environment" _(verified 2026-10-19)_. `.env` is
 gitignored (`.gitignore:45`), so an EAS cloud build never sees it.
@@ -65,6 +69,11 @@ the local Metro, which reads `.env`.
 ---
 
 ### [ ] 2. RevenueCat: real store keys, not the Test Store key — **F** (dashboard) + **C** (code)
+
+> **2026-10-26: code part (step 3) done.** `lib/purchases-context.tsx` uses the test
+> key only when `__DEV__`, otherwise `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
+> `_ANDROID_KEY`. Without them a release build runs with purchases "unavailable"
+> (no crash, free limit lifted). Remaining: steps 1, 2, 4 after #3.
 
 **Problem.** `lib/purchases-context.tsx` only reads
 `EXPO_PUBLIC_REVENUECAT_TEST_KEY` (a `test_…` key).
@@ -138,27 +147,14 @@ rule from `docs/style.css:177` once nothing uses it. ~10 min.
 
 ---
 
-### [ ] 6. Real app icon and splash — **F** (design) + **C** (wiring)
-
-**Problem.** `assets/icon.png` is Expo's template icon (the blue "A" on a
-blueprint grid). `android-icon-*.png`, `splash-icon.png` and the adaptive icon
-background `#E6F4FE` in `app.json` are template values too.
-
-**Why it blocks.** It would ship as the store and home-screen icon.
-
-**Fix.**
-1. **F:** Design the Aloud icon. Needed files:
-   - `icon.png` 1024×1024, no transparency, no rounded corners (iOS rounds them)
-   - `android-icon-foreground.png` (logo inside the central safe zone),
-     `android-icon-background.png` or just a colour, `android-icon-monochrome.png`
-   - `splash-icon.png`
-2. **C:** Set the adaptive icon `backgroundColor` and a splash config
-   (`expo-splash-screen` plugin, background = the `bg` token) in `app.json`.
-3. New dev build to check it — icons are native, so a reload isn't enough.
-
----
-
 ### [ ] 7. iOS sign-in — **F** (consoles) + **C** (config)
+
+> **2026-10-26: steps 1–2 done.** iOS client "Aloud iOS" (bundle `com.aloud.app`)
+> created and added to Supabase's Google client IDs; `iosUrlScheme` set in
+> `app.json`; `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` in `.env` + EAS (preview,
+> production) and passed as `iosClientId` in `lib/auth-providers.ts`. The Google
+> button stays hidden on iOS until Apple sign-in is on (`login.tsx`). Remaining:
+> steps 3–6 after #3.
 
 **Problem A.** `app.json:51`:
 `"iosUrlScheme": "com.googleusercontent.apps.TODO-REPLACE-WITH-REVERSED-IOS-CLIENT-ID"`.
@@ -273,6 +269,12 @@ Not code, but nothing ships without them:
 
 ### [ ] 13. Test the critical flows in a release build, both platforms — **F**
 
+> **2026-10-26, Android preview build `08aad655` (first release build ever):**
+> launches, Supabase loads, no dev buttons; full round (Standard → prep skip →
+> recording with mic → quiz → result) saved and shows on the profile; no JS
+> errors in logcat. Purchases "unavailable" as designed (no store keys), so
+> Standard was open. Not yet: login flows, offline round, sign out / delete, iOS.
+
 Release builds behave differently from dev builds (no Metro, `__DEV__` false, real
 store keys). Run each on iOS **and** Android:
 
@@ -288,6 +290,19 @@ store keys). Run each on iOS **and** Android:
 | Purchase | Sandbox purchase → premium unlocks; restore after reinstall; cancel shows no error |
 | Sign out / delete account | Both land on `/login`; deleted account is gone in the DB |
 | Dev UI | None of the `__DEV__` buttons on Home (`app/(tabs)/home.tsx:359, 381, 410`) show |
+
+---
+
+### [ ] 14. Result screen promises an AI review — **C**
+
+**Problem.** `app/quiz-result.tsx:303`: "AI review of your talk is coming soon"
+(seen in the preview build, 2026-10-26). There is no AI in the MVP
+(decided 2026-09-12), and nothing is scheduled.
+
+**Why it matters.** Store review dislikes features announced but not present
+(Apple 2.1 / 2.3), and players read it as a promise.
+
+**Fix.** Drop the "coming soon" half of the sentence. ~5 min.
 
 ---
 
@@ -315,6 +330,30 @@ store keys). Run each on iOS **and** Android:
 - **Waveform follows the mic level** (added 2026-10-26, `volumechange` event) —
   unverified: the bars didn't move on the emulator with a headset mic. Check on a
   real phone; if still flat, tune `VOLUME_FULL` in `lib/use-speech-transcript.ts`.
+
+---
+
+## 🎨 Last — still a P0 blocker, moved to the end on purpose (2026-10-26)
+
+The icon doesn't exist yet, so this is done after everything else.
+
+### [ ] 6. Real app icon and splash — **F** (design) + **C** (wiring)
+
+**Problem.** `assets/icon.png` is Expo's template icon (the blue "A" on a
+blueprint grid). `android-icon-*.png`, `splash-icon.png` and the adaptive icon
+background `#E6F4FE` in `app.json` are template values too.
+
+**Why it blocks.** It would ship as the store and home-screen icon.
+
+**Fix.**
+1. **F:** Design the Aloud icon. Needed files:
+   - `icon.png` 1024×1024, no transparency, no rounded corners (iOS rounds them)
+   - `android-icon-foreground.png` (logo inside the central safe zone),
+     `android-icon-background.png` or just a colour, `android-icon-monochrome.png`
+   - `splash-icon.png`
+2. **C:** Set the adaptive icon `backgroundColor` and a splash config
+   (`expo-splash-screen` plugin, background = the `bg` token) in `app.json`.
+3. New dev build to check it — icons are native, so a reload isn't enough.
 
 ---
 

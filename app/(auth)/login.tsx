@@ -96,12 +96,11 @@ export default function LoginScreen() {
   const showApple = Platform.OS === "ios";
   const appleAvailable = FEATURES.appleSignIn && showApple;
 
-  // Google is hidden on iOS, for two reasons that point the same way. The iOS
-  // OAuth flow needs a reversed client ID in app.json that isn't set yet (the
-  // `iosUrlScheme` TODO), without which the sign-in sheet can't hand control
-  // back to the app; and App Store Guideline 4.8 won't allow a third-party
-  // login like Google unless Sign in with Apple is offered alongside it, which
-  // is still behind FEATURES.appleSignIn. Until both are resolved, iOS signs in
+  // Google is hidden on iOS. Its client is set up now (`iosUrlScheme` in
+  // app.json, EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID), but App Store Guideline 4.8
+  // won't allow a third-party login like Google unless Sign in with Apple is
+  // offered alongside it, which is still behind FEATURES.appleSignIn — flip
+  // both together, and test both on an iPhone. Until then, iOS signs in
   // with Apple (once enabled), email or guest; Android keeps Google. Off iOS the
   // button still shows even when the native module is absent (Expo Go), where a
   // tap explains it needs a custom dev build.

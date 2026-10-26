@@ -42,8 +42,12 @@ if (googleSignin) {
   // values. This is the WEB client ID from Google Cloud Console, not the iOS
   // one — Supabase's Google provider checks the ID token's audience against
   // it, so it has to be a client Supabase was told to trust (.env.example).
+  // iOS additionally needs its own client ID: without a GoogleService-Info
+  // .plist (we use none) the native SDK has no other way to learn it, and
+  // fails on the first tap. Android ignores it.
   googleSignin.GoogleSignin.configure({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   });
 }
 

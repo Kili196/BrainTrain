@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { NativeModules } from "react-native";
+import { NativeModules, Platform } from "react-native";
 import Purchases, {
   type CustomerInfo,
   type PurchasesOffering,
@@ -19,10 +19,10 @@ import { useAuth } from "./auth-context";
 
 // Subscriptions, through RevenueCat: one SDK in front of both stores.
 //
-// Until the store accounts exist this runs on RevenueCat's Test Store — a
-// purchase opens a test sheet with "succeed / fail" instead of the real payment
-// sheet, but the entitlement it grants is real (it shows up in the dashboard).
-// Swapping to the per-store keys later changes the key, not this file.
+// Dev builds run on RevenueCat's Test Store — a purchase opens a test sheet
+// with "succeed / fail" instead of the real payment sheet, but the entitlement
+// it grants is real (it shows up in the dashboard). Release builds use the
+// per-store keys instead; see API_KEY below.
 //
 // The player's Supabase user id is their RevenueCat id, so a subscription
 // belongs to the account rather than the phone: sign in on a second device
@@ -56,7 +56,21 @@ export type PurchasesApi = {
 // never about which product was bought.
 const ENTITLEMENT = "braintrain_premium";
 
-const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY;
+// The Test Store key only ever reaches a dev build: RevenueCat deliberately
+// crashes a release build configured with it, so a preview or store build
+// takes the real key for its platform. Until those exist they are simply unset,
+// which makes the status "unavailable" — the app runs, nothing can be bought,
+// and use-round-allowance lifts the free limit rather than lock a player out
+// of a paywall that cannot sell.
+//
+// Each process.env.EXPO_PUBLIC_* is spelled out in full on purpose: Expo inlines
+// them at bundle time by matching that literal text, so reading them through a
+// variable name would leave them undefined.
+const API_KEY = __DEV__
+  ? process.env.EXPO_PUBLIC_REVENUECAT_TEST_KEY
+  : Platform.OS === "ios"
+    ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY
+    : process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
 
 // Importing the SDK is safe without its native half; calling it is not. A dev
 // build made before `react-native-purchases` was installed has no RNPurchases

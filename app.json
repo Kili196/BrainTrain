@@ -48,7 +48,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.TODO-REPLACE-WITH-REVERSED-IOS-CLIENT-ID"
+          "iosUrlScheme": "com.googleusercontent.apps.955907309691-j6meio061j0kg9pk6lq4q6mpmtu0a94p"
         }
       ],
       "expo-apple-authentication"
