@@ -294,13 +294,8 @@ export default function QuizResult() {
               What to review
             </Text>
 
-            {/* What this section will be once the recording is real: a reading
-                of what was actually said, not only of the questions missed.
-                Said plainly rather than implied, so the thin version does not
-                read as the finished one. */}
             <Text className="text-caption font-sans text-text-muted">
-              From the questions for now — AI review of your talk is coming
-              soon. Tap one to read it in full.
+              From the questions you missed. Tap one to read it in full.
             </Text>
           </View>
 

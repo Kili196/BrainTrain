@@ -172,13 +172,6 @@ address {
   font-style: normal;
 }
 
-/* Marks text that is still a stand-in and must be replaced before release.
-   Deliberately loud so it cannot slip through unnoticed. */
-.todo {
-  color: var(--warning);
-  font-weight: 700;
-}
-
 nav {
   display: flex;
   gap: 20px;

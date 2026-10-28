@@ -131,7 +131,11 @@ confirmation mail (`emailConfirmed`) currently go nowhere.
 
 ---
 
-### [ ] 5. Replace the placeholder support email in `docs/` — **C**
+### [x] 5. Replace the placeholder support email in `docs/` — **C**
+
+> **Done 2026-10-28** — all four links now `support.aloud@gmail.com`, TODO comments
+> and the `.todo` rule gone. Settings' `FEEDBACK_EMAIL` lowercased to match. Pages
+> still off, so not yet checked live.
 
 **Problem.** `support@example.com (placeholder)` with the orange `.todo` style in:
 - `docs/privacy.html:41-42`
@@ -301,7 +305,10 @@ store keys). Run each on iOS **and** Android:
 
 ---
 
-### [ ] 14. Result screen promises an AI review — **C**
+### [x] 14. Result screen promises an AI review — **C**
+
+> **Done 2026-10-28** — now reads "From the questions you missed. Tap one to read
+> it in full." Bring the AI line back with the update that ships the analysis.
 
 **Problem.** `app/quiz-result.tsx:303`: "AI review of your talk is coming soon"
 (seen in the preview build, 2026-10-26). There is no AI in the MVP
@@ -373,7 +380,7 @@ Accounts & legal
 [ ] Google Play account — closed-test testers lined up
 [ ] Apple Developer account
 [ ] GitHub Pages on; privacy/terms/support/confirmed return 200
-[ ] support@example.com replaced everywhere
+[x] support@example.com replaced everywhere
 
 App config
 [ ] App icon, adaptive icon, splash
@@ -383,7 +390,7 @@ App config
 [x] npx expo install --check, tsc clean
 
 Backend
-[ ] Leaderboard insert limit migration — db:push, tested as a real user
+[x] Leaderboard insert limit migration — db:push, tested as a real user
 [ ] Supabase redirect allow list + SMTP still correct for production
 
 Payments

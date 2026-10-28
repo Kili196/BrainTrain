@@ -43,7 +43,7 @@ const VERSION = Constants.expoConfig?.version ?? "—";
 
 // The support inbox. Kept as its own constant rather than inlined so there is
 // one place to change the address, rather than it being hidden in a handler.
-const FEEDBACK_EMAIL = "Support.aloud@gmail.com";
+const FEEDBACK_EMAIL = "support.aloud@gmail.com";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
