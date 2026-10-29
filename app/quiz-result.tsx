@@ -113,7 +113,7 @@ export default function QuizResult() {
         // screen. The upsert would collapse it onto the same row anyway; this
         // is the cheaper half of that guarantee.
         clear();
-        toast.show("Round saved");
+        toast.show("Round saved", "success");
         router.replace("/home");
       })
       .catch((error: unknown) => {
@@ -123,7 +123,7 @@ export default function QuizResult() {
         // actually loses it.
         console.warn("[round] could not be saved:", error);
         setSaving(false);
-        toast.show("Couldn't save your round — try again");
+        toast.show("Couldn't save your round — try again", "error");
       });
 
     return () => {

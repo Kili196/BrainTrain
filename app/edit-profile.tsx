@@ -83,12 +83,12 @@ export default function EditProfileScreen() {
 
       // The toast lives above the navigator, so it survives leaving the screen
       // and lands on the settings screen behind it.
-      toast.show("Profile saved");
+      toast.show("Profile saved", "success");
       router.back();
     } catch (error) {
       console.warn("[profile] could not be saved:", error);
       setSaving(false);
-      toast.show("Couldn't save your profile — try again");
+      toast.show("Couldn't save your profile — try again", "error");
     }
   };
 

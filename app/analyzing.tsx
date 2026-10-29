@@ -116,7 +116,7 @@ export default function Analyzing() {
         // The round stays in memory, so the result screen can still offer the
         // write as a button. Losing the round needs leaving that screen.
         console.warn("[round] could not be saved:", error);
-        toast.show("Couldn't save your round — try again");
+        toast.show("Couldn't save your round — try again", "error");
         setOutcome("unsaved");
       });
 

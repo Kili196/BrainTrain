@@ -78,7 +78,8 @@ export default function LoginScreen() {
         toast.show(
           kind === "guest"
             ? "Couldn't continue as guest — try again"
-            : "Couldn't sign in — try again"
+            : "Couldn't sign in — try again",
+          "error"
         );
       }
       // "cancelled" needs no feedback: closing the native sheet is a choice,
@@ -109,7 +110,7 @@ export default function LoginScreen() {
   const onApple = () => {
     if (busy) return;
     if (!appleAvailable) {
-      toast.show("Apple sign-in isn't available yet");
+      toast.show("Apple sign-in isn't available yet", "info");
       return;
     }
     run("apple", signInWithApple);
@@ -118,7 +119,7 @@ export default function LoginScreen() {
   const onGoogle = () => {
     if (busy) return;
     if (!isGoogleSignInAvailable) {
-      toast.show("Google sign-in needs a custom dev build");
+      toast.show("Google sign-in needs a custom dev build", "info");
       return;
     }
     run("google", signInWithGoogle);
@@ -133,7 +134,7 @@ export default function LoginScreen() {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      toast.show("Enter your email and password");
+      toast.show("Enter your email and password", "error");
       return;
     }
 
@@ -145,12 +146,12 @@ export default function LoginScreen() {
         // which — so the way to sign-up rides along in the same line. Not
         // "check your email": that reads as "check your inbox", and people
         // then wait for a mail sign-in never sends.
-        toast.show("Wrong email or password. New here? Create an account below.");
+        toast.show("Wrong email or password. New here? Create an account below.", "error");
       } else if (result.outcome === "unconfirmed") {
-        toast.show("Confirm your email first — the link is in your inbox.");
+        toast.show("Confirm your email first — the link is in your inbox.", "error");
       } else if (result.outcome === "error") {
         console.warn("[auth] email sign-in failed:", result.detail);
-        toast.show("Couldn't sign in — try again");
+        toast.show("Couldn't sign in — try again", "error");
       }
     } finally {
       setPending(null);

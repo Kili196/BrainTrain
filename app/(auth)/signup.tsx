@@ -47,13 +47,13 @@ export default function SignUpScreen() {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      toast.show("Enter an email and password");
+      toast.show("Enter an email and password", "error");
       return;
     }
     // Supabase rejects passwords shorter than its minimum (6 by default), but a
     // local check makes that instant feedback instead of a round trip.
     if (password.length < 6) {
-      toast.show("Password must be at least 6 characters");
+      toast.show("Password must be at least 6 characters", "error");
       return;
     }
 
@@ -62,20 +62,20 @@ export default function SignUpScreen() {
       const result = await signUpWithEmail(trimmedEmail, password);
       if (result.outcome === "error") {
         console.warn("[auth] email sign-up failed:", result.detail);
-        toast.show("Couldn't create your account — try again");
+        toast.show("Couldn't create your account — try again", "error");
       } else if (result.outcome === "confirm-email") {
         // No session yet: the account exists but is dormant until the link is
         // clicked. Send them back to sign in once they've confirmed.
-        toast.show("Check your inbox to confirm your email");
+        toast.show("Check your inbox to confirm your email", "info");
         router.back();
       } else if (result.outcome === "exists") {
         // Back to /login, where signing in with that address is one step.
-        toast.show("An account with this email already exists — sign in instead.");
+        toast.show("An account with this email already exists — sign in instead.", "error");
         router.back();
       } else if (result.outcome === "invalid-email") {
-        toast.show("That email address doesn't look right.");
+        toast.show("That email address doesn't look right.", "error");
       } else if (result.outcome === "rate-limited") {
-        toast.show("Too many sign-ups right now — try again in a few minutes.");
+        toast.show("Too many sign-ups right now — try again in a few minutes.", "error");
       }
       // "signed-in" is handled by the effect above.
     } finally {

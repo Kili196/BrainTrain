@@ -333,7 +333,9 @@ store keys). Run each on iOS **and** Android:
 - **Free limit is client-side** (`lib/use-round-allowance.ts` counts rounds in the
   app). A determined user can bypass it. Fine for launch; move it to the server if
   it ever matters financially.
-- **Error toasts show a check icon** (noticed 2026-10-03).
+- ~~**Error toasts show a check icon**~~ (noticed 2026-10-03). **Done 2026-10-28:**
+  `toast.show(message, tone)` with a required `success | error | info`; errors get
+  a red ringed "!", hints no icon.
 - **Leftover BrainTrain names** kept on purpose: EAS slug `braintrain`,
   entitlement `braintrain_premium`, AsyncStorage keys `braintrain.*.v1`, Pages
   URL `kili196.github.io/BrainTrain`. Harmless, but the Pages URL ends up in store

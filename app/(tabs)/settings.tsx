@@ -79,7 +79,7 @@ export default function SettingsScreen() {
     // `openURL` rejects when no mail client is installed, which is common
     // enough on a simulator to be worth saying out loud rather than logging.
     Linking.openURL(url).catch(() => {
-      toast.show("No mail app to send feedback with");
+      toast.show("No mail app to send feedback with", "error");
     });
   };
 
@@ -97,7 +97,7 @@ export default function SettingsScreen() {
     } catch (error) {
       console.warn("[settings] could not sign out:", error);
       setBusy("none");
-      toast.show("Couldn't sign out — try again");
+      toast.show("Couldn't sign out — try again", "error");
     }
   };
 
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
       // fails — the account is still there and the row is still pressable.
       console.warn("[account] could not be deleted:", error);
       setBusy("none");
-      toast.show("Couldn't delete your account — try again");
+      toast.show("Couldn't delete your account — try again", "error");
     }
   };
 

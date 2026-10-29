@@ -6,16 +6,20 @@ import {
   type ReactNode,
 } from "react";
 
-import { Toast } from "../components/ui/Toast";
+import { Toast, type ToastTone } from "../components/ui/Toast";
 
-// App-wide confirmations, raised from anywhere and rendered once at the root.
+// App-wide messages, raised from anywhere and rendered once at the root.
 //
 // It has to live above the navigator because a message routinely outlives the
 // screen that raised it: the round is saved on the result screen, and the
 // confirmation is read on Home a moment later. A toast rendered inside a screen
 // would leave with it.
+//
+// The tone is required, not defaulted: when it was implied, every failure went
+// out under a success check. Making each caller say what it is reporting is
+// what keeps that from creeping back.
 export type ToastApi = {
-  show: (message: string) => void;
+  show: (message: string, tone: ToastTone) => void;
 };
 
 const Context = createContext<ToastApi | null>(null);
@@ -23,14 +27,20 @@ const Context = createContext<ToastApi | null>(null);
 export function ToastProvider({ children }: { children: ReactNode }) {
   // A counter beside the text: raising the same message twice has to restart
   // the toast, and identical state would otherwise change nothing.
-  const [toast, setToast] = useState<{ message: string; key: number } | null>(
-    null
-  );
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: ToastTone;
+    key: number;
+  } | null>(null);
 
   const api = useMemo<ToastApi>(
     () => ({
-      show: (message) =>
-        setToast((current) => ({ message, key: (current?.key ?? 0) + 1 })),
+      show: (message, tone) =>
+        setToast((current) => ({
+          message,
+          tone,
+          key: (current?.key ?? 0) + 1,
+        })),
     }),
     []
   );
@@ -44,6 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <Toast
         key={toast?.key}
         message={toast?.message ?? null}
+        tone={toast?.tone ?? "info"}
         onDismiss={() => setToast(null)}
       />
     </Context.Provider>

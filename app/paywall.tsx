@@ -152,11 +152,11 @@ export default function PaywallScreen() {
 
   const subscribe = async () => {
     if (preview) {
-      toast.show("Preview only — this build can't buy yet");
+      toast.show("Preview only — this build can't buy yet", "info");
       return;
     }
     if (!chosen) {
-      toast.show("Subscriptions aren't available right now");
+      toast.show("Subscriptions aren't available right now", "error");
       return;
     }
     setBusy(true);
@@ -164,10 +164,10 @@ export default function PaywallScreen() {
     setBusy(false);
 
     if (outcome === "purchased") {
-      toast.show("Welcome to Aloud Pro");
+      toast.show("Welcome to Aloud Pro", "success");
       leave();
     } else if (outcome === "error") {
-      toast.show("The purchase didn't go through — try again");
+      toast.show("The purchase didn't go through — try again", "error");
     }
     // Cancelled: they closed the sheet. Nothing to say.
   };
@@ -178,12 +178,12 @@ export default function PaywallScreen() {
     setBusy(false);
 
     if (outcome === "restored") {
-      toast.show("Your subscription is back");
+      toast.show("Your subscription is back", "success");
       leave();
     } else if (outcome === "nothing") {
-      toast.show("No subscription found for this account");
+      toast.show("No subscription found for this account", "error");
     } else {
-      toast.show("Couldn't check your purchases — try again");
+      toast.show("Couldn't check your purchases — try again", "error");
     }
   };
 

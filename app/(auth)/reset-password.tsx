@@ -55,7 +55,7 @@ export default function ResetPasswordScreen() {
   const sendCode = async (): Promise<boolean> => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      toast.show("Enter your email");
+      toast.show("Enter your email", "error");
       return false;
     }
 
@@ -63,16 +63,16 @@ export default function ResetPasswordScreen() {
     if (result.outcome === "sent") {
       // Said the same way whether or not the address has an account — see the
       // comment on PasswordResetRequestResult.
-      toast.show("If that email has an account, a code is on its way");
+      toast.show("If that email has an account, a code is on its way", "info");
       return true;
     }
     if (result.outcome === "invalid-email") {
-      toast.show("That email address doesn't look right.");
+      toast.show("That email address doesn't look right.", "error");
     } else if (result.outcome === "rate-limited") {
-      toast.show("Too many codes sent — try again in a few minutes.");
+      toast.show("Too many codes sent — try again in a few minutes.", "error");
     } else {
       console.warn("[auth] password reset request failed:", result.detail);
-      toast.show("Couldn't send the code — try again");
+      toast.show("Couldn't send the code — try again", "error");
     }
     return false;
   };
@@ -101,12 +101,12 @@ export default function ResetPasswordScreen() {
     if (pending) return;
 
     if (code.length !== CODE_LENGTH) {
-      toast.show(`Enter the ${CODE_LENGTH}-digit code from the email`);
+      toast.show(`Enter the ${CODE_LENGTH}-digit code from the email`, "error");
       return;
     }
     // Checked here, not left to Supabase: see the header comment.
     if (password.length < 6) {
-      toast.show("Password must be at least 6 characters");
+      toast.show("Password must be at least 6 characters", "error");
       return;
     }
 
@@ -116,12 +116,12 @@ export default function ResetPasswordScreen() {
       if (result.outcome === "success") {
         // The toast lives above the router, so it still shows once this screen
         // has been replaced by home.
-        toast.show("Password updated");
+        toast.show("Password updated", "success");
       } else if (result.outcome === "wrong-code") {
-        toast.show("That code is wrong or has expired");
+        toast.show("That code is wrong or has expired", "error");
       } else {
         console.warn("[auth] password reset failed:", result.detail);
-        toast.show("Couldn't set the new password — try again");
+        toast.show("Couldn't set the new password — try again", "error");
       }
     } finally {
       setPending(false);

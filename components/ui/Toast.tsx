@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AlertIcon } from "../icons/AlertIcon";
 import { CheckIcon } from "../icons/CheckIcon";
 import { CloseIcon } from "../icons/CloseIcon";
 import { useReduceMotion } from "../../lib/use-reduce-motion";
@@ -14,21 +15,24 @@ import { colors } from "../../theme/colors";
 // shadow. It floats, so it is one of the three things in the app allowed a
 // blurred shadow.
 //
-// Every toast the app raises today is a confirmation, so the check is part of
-// the shell rather than a prop. The day there is a failure to report, that
-// becomes a tone.
+// The tone only changes the leading icon: a check for something done, a ringed
+// "!" in the error red for something that failed, nothing for a plain hint.
+// The text stays white in all three, so the icon is never the only carrier of
+// the meaning — the words already say it.
 const VISIBLE_MS = 3200;
 const IN_MS = 180;
 const OUT_MS = 150;
 const DROP = 14;
 
-export function Toast({
-  message,
-  onDismiss,
-}: {
+export type ToastTone = "success" | "error" | "info";
+
+export type ToastProps = {
   message: string | null;
+  tone: ToastTone;
   onDismiss: () => void;
-}) {
+};
+
+export function Toast({ message, tone, onDismiss }: ToastProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
 
@@ -98,7 +102,10 @@ export function Toast({
         className="flex-row items-center gap-3 rounded-xl border border-modal bg-surface px-4 py-3.5"
         style={{ boxShadow: colors.shadowOverlay }}
       >
-        <CheckIcon size={15} color={colors.accent.light} />
+        {tone === "success" && (
+          <CheckIcon size={15} color={colors.accent.light} />
+        )}
+        {tone === "error" && <AlertIcon size={15} color={colors.error} />}
 
         <Text
           className="flex-1 text-eyebrow font-sans-extrabold uppercase text-text"

@@ -298,7 +298,7 @@ export default function OnboardingScreen() {
       // in the context one tap away.
       console.warn("[onboarding] could not save the profile:", error);
       setSaving(false);
-      toast.show("Couldn't save your profile — try again");
+      toast.show("Couldn't save your profile — try again", "error");
       return;
     }
 
