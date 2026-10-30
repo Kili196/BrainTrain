@@ -368,9 +368,16 @@ signup quietly fails for them.
   URL `kili196.github.io/BrainTrain`. Harmless, but the Pages URL ends up in store
   listings and mails — consider a custom domain before launch, since changing it
   later means redirects.
-- **No crash reporting.** You will only hear about production crashes from
-  reviews. Consider `sentry-expo` / `@sentry/react-native` after launch (new
-  dependency — decide first).
+- ~~**No crash reporting.**~~ **Done 2026-10-30:** `@sentry/react-native`, EU
+  region (org `aloudapp-zb`, project `react-native`). Crashes only — no tracing,
+  no replay, `sendDefaultPii: false`; off in development. DSN in `.env` and in
+  EAS (development, preview, production); a test event arrived from the dev
+  build. Still open:
+  - **K:** name Sentry (crash reports, EU-hosted, no IP addresses) in the
+    privacy policy; **F:** list crash data in the store privacy forms (#12).
+  - **C:** before the first production build, add a `SENTRY_AUTH_TOKEN` EAS
+    secret so source maps upload. npm blocked `@sentry/cli`'s postinstall
+    (`allowScripts`) — check the EAS build log that the upload actually runs.
 - **Waveform follows the mic level** (added 2026-10-26, `volumechange` event) —
   unverified: the bars didn't move on the emulator with a headset mic. Check on a
   real phone; if still flat, tune `VOLUME_FULL` in `lib/use-speech-transcript.ts`.

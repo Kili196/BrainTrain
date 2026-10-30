@@ -51,7 +51,15 @@
           "iosUrlScheme": "com.googleusercontent.apps.955907309691-j6meio061j0kg9pk6lq4q6mpmtu0a94p"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "aloudapp-zb",
+          "project": "react-native"
+        }
+      ]
     ],
     "extra": {
       "router": {},
