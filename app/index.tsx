@@ -51,11 +51,9 @@ export default function Index() {
     return null;
   }
 
-  // TODO: the local onboarded flag is one value for the whole device (see
-  // lib/onboarding-storage.ts), not per account — so a second account signing
-  // in on a phone that already has a cached profile skips straight to home on
-  // that stale flag. The server check above only runs when nothing is cached,
-  // so it doesn't yet cover this; flagged for whenever more than one real
-  // account per device matters.
+  // The local flag is one value for the whole device, not per account. That is
+  // safe only because every way a session ends clears it (see the `status`
+  // effect in lib/auth-context.tsx), so the next account starts uncached and
+  // goes through the server check above.
   return <Redirect href={hasOnboarded ? "/home" : "/onboarding"} />;
 }

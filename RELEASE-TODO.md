@@ -327,9 +327,10 @@ store keys). Run each on iOS **and** Android:
   `node-forge`, `source-map-js` …). Nearly all sit in build tooling (Metro, CLI,
   Tailwind), not in the app bundle. Revisit with the next SDK upgrade; don't
   `npm audit fix --force`.
-- **`app/index.tsx:54` TODO**: the "onboarded" flag is per device, not per
-  account. A second account on the same phone can skip onboarding. Only matters
-  with shared devices.
+- ~~**`app/index.tsx:54` TODO**: the "onboarded" flag is per device, not per
+  account. A second account on the same phone can skip onboarding.~~ **Done
+  2026-10-29:** the flag is cleared whenever auth status turns signed-out, not
+  only on the Sign out button, so a session that dies on its own clears it too.
 - **Free limit is client-side** (`lib/use-round-allowance.ts` counts rounds in the
   app). A determined user can bypass it. Fine for launch; move it to the server if
   it ever matters financially.

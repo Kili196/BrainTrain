@@ -397,6 +397,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // A session can end without `signOut` ever being called: a refresh token
+  // that dies because the account was deleted or signed out elsewhere, noticed
+  // either mid-use or at the next cold start. The onboarding flag is one value
+  // for the whole device, so if it survived that, the next account to sign in
+  // here would skip onboarding on someone else's profile. Keyed on `status`
+  // rather than the listener's event because a session found dead at startup
+  // never raises one past the `settled` guard. `signOut` and `deleteAccount`
+  // still clear it themselves, awaited, so the explicit paths never race this.
+  useEffect(() => {
+    if (status !== "signed-out") return;
+    clearOnboarding().catch((error: unknown) => {
+      console.warn("[auth] could not clear the onboarding flag:", error);
+    });
+  }, [status]);
+
   useEffect(() => {
     // supabase-js refreshes the access token on a timer, but on React Native it
     // has no idea the app was backgrounded — it only knows about browser tab
