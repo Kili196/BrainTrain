@@ -321,6 +321,32 @@ store keys). Run each on iOS **and** Android:
 
 ---
 
+### [ ] 15. Signup confirmation mail lands in spam — **F** (domain + dashboard)
+
+**Problem.** Custom SMTP sends through `smtp.gmail.com` as
+`support.aloud@gmail.com`. Delivery works, but Gmail files the mail as spam
+(found 2026-10-30: the signup mail to a fresh Gmail address was sent, then only
+turned up via `in:anywhere`). An automated mail with a link, from a new free
+mailbox, with no SPF/DKIM for its own domain, looks like phishing — no setting
+on the Gmail side fixes that. Supabase's dashboard warns about it too. Gmail also
+caps how many mails a mailbox may send per day.
+
+**Why it matters.** A player who never finds the mail can't confirm, so email
+signup quietly fails for them.
+
+**Fix.**
+1. **F:** Buy a domain for Aloud (~10–15 €/year). Also wanted for the legal
+   pages and the confirmation page (see P2 "Leftover BrainTrain names").
+2. **F:** Resend (free up to 3,000 mails/month): add the domain, put its
+   SPF/DKIM records into the domain's DNS, create an API key.
+3. **F:** Supabase → Authentication → Emails → SMTP: host `smtp.resend.com`,
+   port 465, user `resend`, password = the API key, sender e.g.
+   `no-reply@<domain>`.
+4. Sign up with a fresh Gmail and a fresh Outlook address; the mail must land in
+   the inbox.
+
+---
+
 ## 🟡 P2 — Nice to have / post-release
 
 - **`npm audit`**: 41 findings (1 critical `shell-quote`, high `braces`,
