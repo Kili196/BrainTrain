@@ -388,7 +388,15 @@ signup quietly fails for them.
 
 The icon doesn't exist yet, so this is done after everything else.
 
-### [ ] 6. Real app icon and splash — **F** (design) + **C** (wiring)
+### [x] 6. Real app icon and splash — **F** (design) + **C** (wiring)
+
+> **Done 2026-11-01** — the bird mascot. `icon.png` is Fabian's 1024 PNG as-is;
+> the Android foreground is the same art scaled to the visible 72 of 108 dp, on
+> `#141317` (the art's own background). No monochrome icon: a gradient picture has
+> no clean silhouette, so Android 13 themed icons fall back to the normal one.
+> `expo-splash-screen` added; splash = the rounded icon, 128 pt, on `#0a0a0b`.
+> Checked on the Android emulator (dev build ba34f847): launcher icon and splash
+> both intact. **iOS not seen yet** — needs the Apple account; covered by #13.
 
 **Problem.** `assets/icon.png` is Expo's template icon (the blue "A" on a
 blueprint grid). `android-icon-*.png`, `splash-icon.png` and the adaptive icon
@@ -419,7 +427,7 @@ Accounts & legal
 [x] support@example.com replaced everywhere
 
 App config
-[ ] App icon, adaptive icon, splash
+[x] App icon, adaptive icon, splash (iOS unseen)
 [ ] iOS Google OAuth client + iosUrlScheme
 [ ] Sign in with Apple set up, FEATURES.appleSignIn = true
 [x] supportsTablet false, speech permission text fixed
