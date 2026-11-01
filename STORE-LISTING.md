@@ -103,10 +103,7 @@ providers, so **nothing is shared**.
 
 - Data encrypted in transit: **Yes** (HTTPS to Supabase, RevenueCat, Sentry).
 - Users can request deletion: **Yes**.
-- **Account deletion URL is mandatory on Play** for apps that create accounts, and
-  that page must let people request deletion *without* the app. `docs/support.html`
-  currently only says "Settings → Delete account" — add a line like "or email
-  support.aloud@gmail.com from the address on your account and we'll delete it".
+- **Account deletion URL** (mandatory on Play): `https://kili196.github.io/BrainTrain/support.html#delete-account` — the page offers deletion by email for people without the app.
 
 ---
 

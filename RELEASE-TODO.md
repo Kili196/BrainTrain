@@ -269,8 +269,7 @@ build.
 
 > **2026-11-01:** drafts for every text field, the Play Data safety form, Apple's
 > privacy labels, age rating and review notes are in `STORE-LISTING.md`. Still
-> open: screenshots, the test account, a deletion-without-the-app line in
-> `docs/support.html` (Play requires it), and Sentry in `docs/privacy.html`.
+> open: screenshots, the test account, and Sentry in `docs/privacy.html`.
 
 Not code, but nothing ships without them:
 - Screenshots (iPhone 6.7" + 6.5"; Android phone), short + long description,
