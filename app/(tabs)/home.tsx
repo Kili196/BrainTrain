@@ -235,7 +235,8 @@ export default function Home() {
       }
 
       return daily;
-    }, "You have learned every topic there is. Nothing new for today.");
+      // One line: it shares the caption slot under the stage.
+    }, "You've learned every topic. Nothing new today.");
   };
 
   // A locked choice is still a choice: it goes to the paywall instead of the
@@ -310,22 +311,29 @@ export default function Home() {
           {/* Caption under the stage. Fixed height so landing a draw cannot shift
               the ring above it; the tracking is the mockup's 0.12em at 10px,
               which sits between the eyebrow and button tokens. */}
+          {/* A failed draw says so in the same slot. It used to sit below it,
+              outside any reserved space, and on Android it ran under the gear
+              icon. The slot is free at that moment anyway: a draw that failed
+              is no longer drawing. */}
           <View className="mt-1.5 h-6 justify-center">
-            <Text
-              className={`text-center text-eyebrow font-sans-bold uppercase ${
-                isDrawing ? "text-accent" : "text-text-muted"
-              }`}
-              style={{ letterSpacing: 1.2 }}
-            >
-              {isDrawing ? "Topic drawn" : ""}
-            </Text>
+            {error && !isDrawing ? (
+              <Text
+                className="text-center text-body font-sans text-error"
+                numberOfLines={1}
+              >
+                {error}
+              </Text>
+            ) : (
+              <Text
+                className={`text-center text-eyebrow font-sans-bold uppercase ${
+                  isDrawing ? "text-accent" : "text-text-muted"
+                }`}
+                style={{ letterSpacing: 1.2 }}
+              >
+                {isDrawing ? "Topic drawn" : ""}
+              </Text>
+            )}
           </View>
-
-          {error ? (
-            <Text className="mt-4 text-center text-body font-sans text-error">
-              {error}
-            </Text>
-          ) : null}
         </Animated.View>
 
         {/* Everything below the stage leaves as one block, downwards, just after

@@ -97,10 +97,15 @@ export function useTopicDraw(decoys: string[]): TopicDraw {
           outcome.topic = result;
           outcome.done = true;
         },
-        (cause) => {
-          // The thrown message already says what failed.
-          outcome.error =
-            cause instanceof Error ? cause.message : "Something went wrong.";
+        (cause: unknown) => {
+          // The thrown message is for us, not the player: offline it reads
+          // "fetch failed: java.net.UnknownHostException …", straight off the
+          // stage. Log it, and say what the player can actually do. Offline is
+          // by far the likeliest cause, and PLAY sits right under the message,
+          // so it doubles as the retry. Kept to one line: Home's stage has no
+          // room for a second, which ran under the gear icon on Android.
+          console.warn("[draw] could not load a topic:", cause);
+          outcome.error = "Couldn't connect. Tap Play to try again.";
           outcome.done = true;
         }
       );
