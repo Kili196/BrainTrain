@@ -290,6 +290,17 @@ Not code, but nothing ships without them:
 > recording with mic → quiz → result) saved and shows on the profile; no JS
 > errors in logcat. Purchases "unavailable" as designed (no store keys), so
 > Standard was open. Not yet: login flows, offline round, sign out / delete, iOS.
+>
+> **2026-11-05, Android emulator, dev build `ba34f847` (not a release build):**
+> Google login → home; sign out → `/login`; email signup with a new address →
+> mail arrived (spam, see #15), link confirmed (blank page, see the
+> confirmation-page todo), sign in → onboarding → home; offline round → toast +
+> "Round not saved." → result offers **Save round** → back online → saved,
+> button turns into Done; delete account → `/login`, user gone from
+> `auth.users`. Found on the way: Home with no network shows the raw error
+> (`Failed to load the daily topic: … UnknownHostException …`) instead of a
+> friendly line with a retry. Still open: password reset, free limit, purchase,
+> all of it in a release build, and iOS.
 
 Release builds behave differently from dev builds (no Metro, `__DEV__` false, real
 store keys). Run each on iOS **and** Android:
